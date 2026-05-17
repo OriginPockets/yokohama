@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML/CSS 基本練習用エディタ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/html-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/css-hint.min.js"></script>
+    <style>
+        /* ── CodeMirror hint ドロップダウン ダークテーマ上書き ── */
+        .CodeMirror-hints {
+            background: #252526 !important;
+            border: 1px solid #444 !important;
+            border-radius: 5px !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+            font-family: 'Consolas', monospace !important;
+            font-size: 13px !important;
+            z-index: 999 !important;
+        }
+
+        .CodeMirror-hint {
+            color: #d4d4d4 !important;
+            padding: 3px 10px !important;
+        }
+
+        .CodeMirror-hint-active {
+            background: #0e639c !important;
+            color: #fff !important;
+            border-radius: 3px !important;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1e1e1e;
+            color: #cccccc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        /* ── タイトルバー ── */
+        #titlebar {
+            background: #323233;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            border-bottom: 1px solid #111;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            color: #4fc1ff;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .level-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .level-badge {
+            background: #0e639c;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        #xp-bar-wrap {
+            width: 140px;
+            height: 8px;
+            background: #3c3c3c;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #xp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4fc1ff, #007acc);
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        #xp-text {
+            font-size: 11px;
+            color: #999;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        /* ── メインレイアウト ── */
+        #app {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ── サイドバー ── */
+        #sidebar {
+            width: 270px;
+            min-width: 220px;
+            background: #252526;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #1a1a1a;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .sb-section {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sb-section.grow {
+            flex: 1;
+            overflow-y: hidden;
+        }
+
+        .sb-section h3 {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        #mode-filter {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 4px 0;
+            border: 1px solid #3c3c3c;
+            border-radius: 5px;
+            background: #2d2d2d;
+            color: #777;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.15s;
+        }
+
+        .mode-btn:hover {
+            background: #3c3c3c;
+            color: #ccc;
+        }
+
+        .mode-btn.active {
+            background: #0e639c;
+            color: #fff;
+            border-color: #0e639c;
+        }
+
+        /* レベル一覧リスト */
+        #level-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+        }
+
+        #level-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #level-nav::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        #level-nav::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .lvl-cat {
+            color: #888;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 12px 10px 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .lvl-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #aaa;
+            transition: background 0.15s, color 0.15s;
+            position: relative;
+        }
+
+        .lvl-item:hover {
+            background: #2d2d2d;
+            color: #eee;
+        }
+
+        .lvl-item.active {
+            background: #1e2d3d;
+            color: #4fc1ff;
+        }
+
+        .lvl-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            bottom: 8px;
+            width: 3px;
+            background: #4fc1ff;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .lvl-num {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            background: #252526;
+            flex-shrink: 0;
+        }
+
+        .lvl-item.active .lvl-num {
+            border-color: #4fc1ff;
+            color: #4fc1ff;
+        }
+
+        .lvl-item.done .lvl-num {
+            background: #1a3d1a;
+            color: #4ec94e;
+            border-color: #2a5a2a;
+        }
+
+        .lvl-title {
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* スキル一覧 */
+        #skills-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .skill-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: #1a3d1a;
+            border: 1px solid #2a5a2a;
+            border-radius: 5px;
+            padding: 6px 9px;
+            font-size: 11px;
+            color: #7ecb7e;
+        }
+
+        .skill-chip .sk-icon {
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .no-skill {
+            color: #555;
+            font-size: 11px;
+            font-style: italic;
+        }
+
+        /* ── メインコンテンツエリア ── */
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── チャレンジバー ── */
+        #challenge-bar {
+            background: #252526;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 10px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        #ch-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #ch-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+
+        #ch-title {
+            color: #4fc1ff;
+            font-size: 13px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        #ch-cat {
+            display: inline-block;
+            background: #1a3560;
+            color: #7cb8f5;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        #ch-desc {
+            color: #bbb;
+            line-height: 1.65;
+            font-size: 12px;
+            overflow-y: auto;
+            max-height: 72px;
+        }
+
+        #ch-desc code {
+            background: #1a1a2e;
+            color: #9cdcfe;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+        }
+
+        #hint-box {
+            display: none;
+            background: #2a2a1a;
+            border: 1px solid #5a5020;
+            border-radius: 5px;
+            padding: 8px 10px;
+            margin-top: 6px;
+            color: #d4c875;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        #hint-box code {
+            background: #1a1a10;
+            color: #e5c07b;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+        }
+
+        #btn-slide {
+            background: #2d2d2d;
+            color: #ccc;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        #btn-slide:hover {
+            background: #3a3a3a;
+            color: #fff;
+        }
+
+        /* ── ワークスペース ── */
+        #workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+            overflow: hidden;
+        }
+
+        #tab-bar {
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            height: 36px;
+            border-bottom: 1px solid #111;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            padding: 0 18px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #777;
+            border-right: 1px solid #1a1a1a;
+            position: relative;
+            user-select: none;
+            transition: color 0.15s;
+        }
+
+        .tab:hover {
+            color: #ccc;
+            background: #333;
+        }
+
+        .tab.active {
+            color: #ddd;
+            background: #1e1e1e;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #0e639c;
+        }
+
+        .tab-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .tab-html .tab-dot {
+            background: #e34c26;
+        }
+
+        .tab-css .tab-dot {
+            background: #264de4;
+        }
+
+        #editors {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ep {
+            position: absolute;
+            inset: 0;
+            display: none;
+        }
+
+        .ep.active {
+            display: block;
+        }
+
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .CodeMirror-scroll {
+            height: 100%;
+        }
+
+        #resizer {
+            width: 5px;
+            background: #1a1a1a;
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        #resizer:hover,
+        #resizer.drag {
+            background: #007acc;
+        }
+
+        #preview-area {
+            width: 42%;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #1a1a1a;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        #preview-bar {
+            background: #2d2d2d;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 8px;
+            border-bottom: 1px solid #111;
+            flex-shrink: 0;
+        }
+
+        .mac-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .mac-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+        }
+
+        #preview-label {
+            font-size: 12px;
+            color: #666;
+            margin-left: 4px;
+        }
+
+        #preview-frame {
+            flex: 1;
+            border: none;
+            background: #fff;
+        }
+
+        /* ── ボトムバー ── */
+        #bottom-bar {
+            background: #007acc;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 3px 13px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.15s;
+            letter-spacing: 0.3px;
+        }
+
+        #btn-check {
+            background: #3fb950;
+            color: #0d1117;
+        }
+
+        #btn-check:hover {
+            background: #56d364;
+        }
+
+        #btn-hint {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #btn-hint:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #btn-reset {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        #btn-reset:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        #status-msg {
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            transition: color 0.3s;
+        }
+
+        #status-msg.ok {
+            color: #3fb950;
+        }
+
+        #status-msg.ng {
+            color: #ff7b72;
+        }
+
+        /* ── モーダル ── */
+        #modal-bg {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #modal-bg.show {
+            display: flex;
+        }
+
+        #modal {
+            background: #252526;
+            border: 1px solid #555;
+            border-radius: 12px;
+            padding: 36px 32px;
+            width: 420px;
+            text-align: center;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.75);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-trophy {
+            font-size: 52px;
+            margin-bottom: 10px;
+        }
+
+        #modal h2 {
+            color: #4fc1ff;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        #modal .subtitle {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        .skill-box {
+            background: #1a3d1a;
+            border: 2px solid #3fb950;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 0 0 14px;
+        }
+
+        .skill-box .sk-name {
+            color: #3fb950;
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .skill-box .sk-desc {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .xp-badge {
+            color: #f0c040;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        #btn-next {
+            background: #0e639c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 11px 28px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        #btn-next:hover {
+            background: #1177bb;
+        }
+
+        /* 全クリア画面 */
+        #all-done {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #1e1e1e;
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            animation: fadeIn 0.5s ease;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        #all-done.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #all-done .done-emoji {
+            font-size: 72px;
+        }
+
+        #all-done h1 {
+            color: #f0c040;
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        #all-done p {
+            color: #888;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .skills-grid .skill-chip {
+            flex-direction: column;
+            text-align: center;
+            padding: 14px 10px;
+            justify-content: center;
+        }
+
+        .skills-grid .sk-icon {
+            font-size: 20px;
+        }
+
+        #btn-restart {
+            background: #2a2a2a;
+            color: #ccc;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 10px 24px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+
+        #btn-restart:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        /* ── スライドパネル ── */
+        #slide-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 50;
+        }
+
+        #slide-overlay.show {
+            display: block;
+        }
+
+        #slide-panel {
+            position: fixed;
+            top: 0;
+            right: -580px;
+            width: 560px;
+            height: 100%;
+            background: #1a1a2e;
+            border-left: 2px solid #4fc1ff;
+            z-index: 51;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.7);
+        }
+
+        #slide-panel.open {
+            right: 0;
+        }
+
+        #slide-header {
+            background: #252540;
+            padding: 13px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
+        }
+
+        #slide-level-title {
+            color: #4fc1ff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        #btn-close-slide {
+            background: #3a3a5c;
+            color: #ccc;
+            border: 1px solid #555;
+            border-radius: 5px;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        #btn-close-slide:hover {
+            background: #4a4a6c;
+            color: #fff;
+        }
+
+        #slide-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        #slide-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #slide-body::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        .slide-page {
+            display: none;
+            padding: 26px 28px 20px;
+            animation: slidePageIn 0.25s ease;
+        }
+
+        .slide-page.active {
+            display: block;
+        }
+
+        @keyframes slidePageIn {
+            from {
+                opacity: 0;
+                transform: translateX(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-num {
+            display: inline-block;
+            background: #0e639c;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 9px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .slide-title {
+            font-size: 19px;
+            font-weight: 800;
+            color: #e0e0e0;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .slide-text {
+            color: #bbb;
+            font-size: 13px;
+            line-height: 1.9;
+            margin-bottom: 14px;
+        }
+
+        .slide-text b {
+            color: #4fc1ff;
+        }
+
+        .slide-text code {
+            background: #1a1a3e;
+            color: #9cdcfe;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .slide-code-block {
+            background: #0d1117;
+            border: 1px solid #2a2a3a;
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin: 12px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.75;
+            color: #d4d4d4;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .slide-code-block .kw {
+            color: #569cd6;
+        }
+
+        .slide-code-block .tag {
+            color: #4ec9b0;
+        }
+
+        .slide-code-block .attr {
+            color: #9cdcfe;
+        }
+
+        .slide-code-block .val {
+            color: #ce9178;
+        }
+
+        .slide-code-block .num {
+            color: #b5cea8;
+        }
+
+        .slide-code-block .cm {
+            color: #6a9955;
+            font-style: italic;
+        }
+
+        .slide-tip {
+            background: #1a3d1a;
+            border-left: 4px solid #3fb950;
+            border-radius: 5px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            font-size: 12px;
+            color: #8ecf8e;
+            line-height: 1.7;
+        }
+
+        .slide-tip::before {
+            content: "💡 ポイント：";
+            font-weight: 700;
+            color: #3fb950;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .slide-visual {
+            background: #252526;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 18px;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+        }
+
+        #slide-footer {
+            background: #252540;
+            border-top: 1px solid #333;
+            padding: 11px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .slide-nav-btn {
+            background: #2d2d4e;
+            color: #ccc;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-width: 72px;
+        }
+
+        .slide-nav-btn:hover:not(:disabled) {
+            background: #3d3d6e;
+            color: #fff;
+        }
+
+        .slide-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #slide-dots {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .slide-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #444;
+            transition: background 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+
+        .slide-dot.active {
+            background: #4fc1ff;
+            transform: scale(1.35);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- タイトルバー -->
+    <div id="titlebar">
+        <span class="logo">🎓 HTML/CSS 基本練習用エディタ</span>
+        <div class="level-info">
+            <span id="lv-badge" class="level-badge">Level 1 / 50</span>
+            <div id="xp-bar-wrap">
+                <div id="xp-bar"></div>
+            </div>
+            <span id="xp-text">XP: 0 / 0</span>
+        </div>
+    </div>
+
+    <div id="app">
+        <!-- サイドバー -->
+        <div id="sidebar">
+            <div class="sb-section grow">
+                <h3>レベル一覧</h3>
+                <div id="mode-filter">
+                    <button class="mode-btn active" id="mf-all" onclick="setFilter('all')">ALL</button>
+                    <button class="mode-btn" id="mf-html" onclick="setFilter('html')">HTML</button>
+                    <button class="mode-btn" id="mf-css" onclick="setFilter('css')">CSS</button>
+                </div>
+                <div id="level-nav"></div>
+            </div>
+
+            <div class="sb-section">
+                <h3>獲得スキル (最新)</h3>
+                <div id="skills-list">
+                    <div class="no-skill">まだスキルがありません</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- メインコンテンツ -->
+        <div id="main-content">
+            <div id="challenge-bar">
+                <div id="ch-info">
+                    <div id="ch-meta">
+                        <div id="ch-title"></div>
+                        <span id="ch-cat"></span>
+                    </div>
+                    <div id="ch-desc"></div>
+                    <div id="hint-box"></div>
+                </div>
+                <button id="btn-slide" onclick="openSlidePanel()">📖 スライドを見る</button>
+            </div>
+
+            <div id="workspace">
+                <div id="editor-area">
+                    <div id="tab-bar">
+                        <div class="tab tab-html active" id="t-html" onclick="switchTab('html')">
+                            <span class="tab-dot"></span>index.html
+                        </div>
+                        <div class="tab tab-css" id="t-css" onclick="switchTab('css')">
+                            <span class="tab-dot"></span>style.css
+                        </div>
+                    </div>
+                    <div id="editors">
+                        <div class="ep active" id="ep-html"><textarea id="ed-html"></textarea></div>
+                        <div class="ep" id="ep-css"><textarea id="ed-css"></textarea></div>
+                    </div>
+                </div>
+
+                <div id="resizer"></div>
+
+                <div id="preview-area">
+                    <div id="preview-bar">
+                        <div class="mac-dots">
+                            <div class="mac-dot" style="background:#ff5f57"></div>
+                            <div class="mac-dot" style="background:#febc2e"></div>
+                            <div class="mac-dot" style="background:#28c840"></div>
+                        </div>
+                        <span id="preview-label">プレビュー</span>
+                    </div>
+                    <iframe id="preview-frame" title="preview"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ボトムバー -->
+    <div id="bottom-bar">
+        <button class="btn" id="btn-check" onclick="checkAnswer()">✓ 答え合わせ</button>
+        <button class="btn" id="btn-hint" onclick="toggleHint()">💡 ヒント</button>
+        <button class="btn" id="btn-reset" onclick="resetCode()">↺ リセット</button>
+        <span id="status-msg"></span>
+    </div>
+
+    <!-- スライドオーバーレイ -->
+    <div id="slide-overlay" onclick="closeSlidePanel()"></div>
+
+    <!-- スライドパネル -->
+    <div id="slide-panel">
+        <div id="slide-header">
+            <div id="slide-level-title"></div>
+            <button id="btn-close-slide" onclick="closeSlidePanel()">✕ 閉じる</button>
+        </div>
+        <div id="slide-body" id="slide-body"></div>
+        <div id="slide-footer">
+            <button class="slide-nav-btn" id="slide-prev" onclick="changeSlide(-1)">← 前へ</button>
+            <div id="slide-dots"></div>
+            <button class="slide-nav-btn" id="slide-next" onclick="changeSlide(1)">次へ →</button>
+        </div>
+    </div>
+
+    <!-- レベルクリアモーダル -->
+    <div id="modal-bg">
+        <div id="modal">
+            <div class="modal-trophy">🏆</div>
+            <h2>レベルクリア！</h2>
+            <p class="subtitle">新しいスキルを習得しました</p>
+            <div class="skill-box">
+                <div class="sk-name" id="m-skill"></div>
+                <div class="sk-desc" id="m-desc"></div>
+            </div>
+            <div class="xp-badge" id="m-xp"></div>
+            <button id="btn-next" onclick="goNext()">次のレベルへ →</button>
+        </div>
+    </div>
+
+    <!-- 全クリア画面 -->
+    <div id="all-done">
+        <div class="done-emoji">🎉</div>
+        <h1>全レベルクリア！</h1>
+        <p>素晴らしい！あなたはHTMLとCSSのあらゆる主要な機能をマスターしました！<br>これでどんなWebサイトのレイアウトも思いのままに作成できるはずです。</p>
+        <div class="skills-grid" id="done-skills"></div>
+        <button id="btn-restart" onclick="restart()">最初からやり直す</button>
+    </div>
+
+    <script>
+        // ─── スニペット定義 ───
+        const snippets = {
+            'h1': '<h1>|</h1>', 'h2': '<h2>|</h2>', 'h3': '<h3>|</h3>',
+            'p': '<p>|</p>', 'div': '<div>|</div>', 'span': '<span>|</span>',
+            'a': '<a href="|"></a>', 'img': '<img src="|" alt="">',
+            'ul': '<ul>\n  |\n</ul>', 'ol': '<ol>\n  |\n</ol>', 'li': '<li>|</li>',
+            'table': '<table>\n  |\n</table>', 'tr': '<tr>|</tr>', 'td': '<td>|</td>', 'th': '<th>|</th>',
+            'form': '<form>\n  |\n</form>', 'input': '<input type="|">', 'button': '<button>|</button>',
+            'section': '<section>\n  |\n</section>', 'header': '<header>\n  |\n</header>',
+            'footer': '<footer>\n  |\n</footer>', 'nav': '<nav>\n  |\n</nav>', 'main': '<main>\n  |\n</main>',
+            'strong': '<strong>|</strong>', 'em': '<em>|</em>', 'code': '<code>|</code>',
+            'br': '<br>', 'hr': '<hr>'
+        };
+
+        function expandSnippet(cm) {
+            if (cm.somethingSelected()) { cm.indentSelection("add"); return; }
+            const cur = cm.getCursor();
+            const lineText = cm.getLine(cur.line);
+            const match = lineText.slice(0, cur.ch).match(/(<)?([a-zA-Z0-9]+)$/);
+            if (match && snippets[match[2]]) {
+                const word = match[2];
+                const parts = snippets[word].split('|');
+                const startCh = cur.ch - word.length - (match[1] !== undefined ? 1 : 0);
+                cm.replaceRange(parts.join(''), { line: cur.line, ch: startCh }, { line: cur.line, ch: cur.ch });
+                if (parts.length === 2) {
+                    const lines = parts[0].split('\n');
+                    let newCh = lines.length === 1 ? startCh + lines[0].length : lines[lines.length - 1].length;
+                    cm.setCursor({ line: cur.line + lines.length - 1, ch: newCh });
+                }
+            } else { return CodeMirror.Pass; }
+        }
+
+        // ─── チャレンジデータ (全50レベル) ───
+        const challenges = [
+            // ＝＝＝ HTML 基礎 ＝＝＝
+            { id: 1, title: 'はじめての見出し', category: 'HTML 基礎', skill: '見出しタグ', skillIcon: '📝', skillDesc: 'h1〜h6 タグで見出しを作れます！', xp: 50, desc: `<b>目標：</b>「Hello, World!」という見出しを表示しましょう！`, hint: '<code>&lt;h1&gt;Hello, World!&lt;/h1&gt;</code> と書いてみましょう。', html: '<!-- ここにコードを書いてください -->\n', css: '', check: (h) => /<h[1-6][^>]*>\s*hello,?\s*world!?\s*<\/h[1-6]>/i.test(h) },
+            { id: 2, title: 'テキストと段落', category: 'HTML 基礎', skill: 'テキスト要素', skillIcon: '📄', skillDesc: 'p / strong タグでテキストを整えられます！', xp: 60, desc: `<b>目標：</b>段落 (<code>&lt;p&gt;</code>) を作り、一部を<strong>太字</strong>にしましょう！`, hint: '<code>&lt;p&gt;</code> の中に <code>&lt;strong&gt;&lt;/strong&gt;</code> を書きます。', html: '<!-- pタグとstrongタグを使ってみましょう -->\n', css: '', check: (h) => /<p[^>]*>[\s\S]*<\/p>/i.test(h) && /<strong[^>]*>[\s\S]*<\/strong>/i.test(h) },
+            { id: 3, title: 'リンクを貼ろう', category: 'HTML 基礎', skill: 'リンク', skillIcon: '🔗', skillDesc: 'a タグで他のページへのリンクを作れます！', xp: 70, desc: `<b>目標：</b>Googleへのリンクを作成しましょう！`, hint: '<code>&lt;a href="https://google.com"&gt;テキスト&lt;/a&gt;</code>', html: '<!-- aタグを書いてみましょう -->\n', css: '', check: (h) => /<a[^>]+href=["']https?:\/\/[^"']+["'][^>]*>[\s\S]*<\/a>/i.test(h) },
+            { id: 4, title: '画像を表示しよう', category: 'HTML 基礎', skill: '画像', skillIcon: '🖼️', skillDesc: 'img タグで画像を表示できます！', xp: 70, desc: `<b>目標：</b>画像を表示しましょう！(https://picsum.photos/200/150)`, hint: '<code>&lt;img src="URL"&gt;</code>', html: '<!-- imgタグを書いてみましょう -->\n', css: '', check: (h) => /<img[^>]+src=["']https?:\/\/[^"']+["'][^>]*>/i.test(h) },
+            { id: 5, title: '箇条書きリスト', category: 'HTML 基礎', skill: 'リスト', skillIcon: '📋', skillDesc: 'ul / li タグで順序なしリストが作れます！', xp: 80, desc: `<b>目標：</b>フルーツを3つリストにしましょう！`, hint: '<code>&lt;ul&gt;</code> の中に <code>&lt;li&gt;</code> を3つ書きます。', html: '<!-- ulタグとliタグでリストを作りましょう -->\n', css: '', check: (h) => { const m = h.match(/<li[^>]*>[\s\S]*?<\/li>/gi); return /<ul[^>]*>/i.test(h) && m && m.length >= 3; } },
+
+            // ＝＝＝ HTML の骨組みと属性 ＝＝＝
+            { id: 6, title: '表（テーブル）を作ろう', category: 'HTML 構造', skill: 'テーブル', skillIcon: '📊', skillDesc: 'tableで表を作成できます！', xp: 100, desc: `<b>目標：</b>2行2列の表を作成しましょう！`, hint: 'table > tr > th/td の順に書きます。', html: '<!-- テーブルを作りましょう -->\n', css: 'table, th, td { border: 1px solid #333; }', check: (h) => /<table[^>]*>[\s\S]*<tr[^>]*>[\s\S]*(<t[hd][^>]*>[\s\S]*<\/t[hd]>){2,}[\s\S]*<\/tr>[\s\S]*<\/table>/i.test(h) },
+            { id: 7, title: '入力フォーム', category: 'HTML 構造', skill: 'フォーム', skillIcon: '⌨️', skillDesc: 'input / button を使えます！', xp: 90, desc: `<b>目標：</b>テキスト入力とボタンを作りましょう！`, hint: '<code>&lt;input type="text"&gt;</code> と <code>&lt;button&gt;</code>', html: '<!-- input, button -->\n', css: '', check: (h) => /<input[^>]+type=["']?text["']?[^>]*>/i.test(h) && /<button[^>]*>[\s\S]*<\/button>/i.test(h) },
+            { id: 8, title: '選択式のフォーム', category: 'HTML 構造', skill: 'ラジオ・チェック', skillIcon: '☑️', skillDesc: 'チェックボックスを作れます！', xp: 100, desc: `<b>目標：</b>チェックボックスを作りましょう！`, hint: '<code>&lt;input type="checkbox"&gt;</code>', html: '<!-- checkbox -->\n', css: '', check: (h) => /<input[^>]+type=["']?checkbox["']?[^>]*>/i.test(h) },
+            { id: 9, title: 'グループ化（divとspan）', category: 'HTML 構造', skill: 'グループ化', skillIcon: '📦', skillDesc: 'div / span で要素をまとめられます！', xp: 90, desc: `<b>目標：</b>divで全体を囲み、一部の文字をspanで囲みましょう。`, hint: '<code>&lt;div&gt;&lt;p&gt;一部を&lt;span&gt;赤色&lt;/span&gt;にする&lt;/p&gt;&lt;/div&gt;</code>', html: '<!-- div, span -->\n', css: 'span { color: red; }', check: (h) => /<div[^>]*>[\s\S]*<span[^>]*>[\s\S]*<\/span>[\s\S]*<\/div>/i.test(h) },
+            { id: 10, title: 'セマンティックタグ', category: 'HTML 構造', skill: '意味論的タグ', skillIcon: '🏗️', skillDesc: 'header / main / footer を使えます！', xp: 110, desc: `<b>目標：</b>ヘッダー、メインコンテンツ、フッターを作りましょう！`, hint: '上から順に header, main, footerタグを使います。', html: '<!-- header, main, footer -->\n', css: 'header, main, footer {\n  border: 1px solid #ccc;\n  margin: 5px;\n}', check: (h) => /<header[^>]*>[\s\S]*<\/header>/i.test(h) && /<main[^>]*>[\s\S]*<\/main>/i.test(h) && /<footer[^>]*>[\s\S]*<\/footer>/i.test(h) },
+
+            // ＝＝＝ CSS 基礎 ＝＝＝
+            { id: 11, title: '文字色と背景色', category: 'CSS 基礎', skill: 'カラー', skillIcon: '🎨', skillDesc: '色をマスターしました！', xp: 80, desc: `<b>目標：</b>見出しのテキスト色を白に、背景色を青にしましょう！`, hint: 'h1 { color: white; background-color: blue; }', html: '<h1>スタイルを変えてみよう</h1>\n', css: 'h1 {\n\n}\n', check: (h, c) => /color\s*:\s*[a-zA-Z#0-9]+/i.test(c) && /background(-color)?\s*:\s*[a-zA-Z#0-9]+/i.test(c) },
+            { id: 12, title: 'フォントの調整', category: 'CSS 基礎', skill: 'フォント', skillIcon: 'A', skillDesc: '文字サイズを変更できます！', xp: 90, desc: `<b>目標：</b>pタグの文字サイズを24pxに、太字にしましょう！`, hint: 'font-size: 24px; font-weight: bold;', html: '<p>文字を大きく太くしてください</p>\n', css: 'p {\n\n}\n', check: (h, c) => /font-size\s*:\s*\d+px/i.test(c) && /font-weight\s*:\s*(bold|\d+)/i.test(c) },
+            { id: 13, title: 'テキストの配置と装飾', category: 'CSS 基礎', skill: 'テキスト装飾', skillIcon: '📝', skillDesc: 'text-align が使えます！', xp: 90, desc: `<b>目標：</b>文字を中央揃えにして下線を引きましょう！`, hint: 'text-align: center; text-decoration: underline;', html: '<h2>重要なお知らせ</h2>\n', css: 'h2 {\n\n}\n', check: (h, c) => /text-align\s*:\s*center/i.test(c) && /text-decoration\s*:\s*underline/i.test(c) },
+
+            // ＝＝＝ CSS ボックスモデル ＝＝＝
+            { id: 14, title: '幅と高さ', category: 'CSS ボックスモデル', skill: 'サイズ調整', skillIcon: '📏', skillDesc: 'width / height を指定できます！', xp: 100, desc: `<b>目標：</b>幅を 200px、高さを 100px にしましょう！`, hint: 'width: 200px; height: 100px;', html: '<div class="box"></div>\n', css: '.box {\n  background-color: #4fc1ff;\n}\n', check: (h, c) => /width\s*:\s*\d+px/i.test(c) && /height\s*:\s*\d+px/i.test(c) },
+            { id: 15, title: '内側の余白 (Padding)', category: 'CSS ボックスモデル', skill: 'Padding', skillIcon: '🔲', skillDesc: 'padding を使えます！', xp: 110, desc: `<b>目標：</b>内側に 20px の余白を作りましょう！`, hint: 'padding: 20px;', html: '<div class="box">テキスト</div>\n', css: '.box {\n  background-color: #ffeaa7;\n}\n', check: (h, c) => /padding\s*:\s*\d+px/i.test(c) },
+            { id: 16, title: '外側の余白 (Margin)', category: 'CSS ボックスモデル', skill: 'Margin', skillIcon: '↔️', skillDesc: 'margin を使えます！', xp: 110, desc: `<b>目標：</b>箱の間に余白を作り、中央に配置しましょう！`, hint: 'margin: 0 auto; margin-bottom: 20px;', html: '<div class="box">上</div>\n<div class="box">下</div>\n', css: '.box {\n  width: 150px;\n  background-color: #81ecec;\n}\n', check: (h, c) => /margin/i.test(c) && /auto/i.test(c) },
+            { id: 17, title: '枠線と角丸', category: 'CSS ボックスモデル', skill: 'Border', skillIcon: '⭕', skillDesc: 'border を丸くできます！', xp: 120, desc: `<b>目標：</b>画像に枠線をつけ、角を丸く（円に）しましょう！`, hint: 'border: 5px solid blue; border-radius: 50%;', html: '<img src="https://picsum.photos/150" alt="アイコン">\n', css: 'img {\n\n}\n', check: (h, c) => /border\s*:/i.test(c) && /border-radius\s*:/i.test(c) },
+
+            // ＝＝＝ CSS レイアウト ＝＝＝
+            { id: 18, title: '要素の表示形式', category: 'CSS レイアウト', skill: 'Display', skillIcon: '🧱', skillDesc: 'display を理解しました！', xp: 130, desc: `<b>目標：</b>spanを縦に並べ、幅を持たせましょう！`, hint: 'display: block; width: 100px;', html: '<span class="item">項目1</span>\n<span class="item">項目2</span>\n', css: '.item {\n  background: #fab1a0;\n  margin-bottom: 5px;\n}\n', check: (h, c) => /display\s*:\s*block/i.test(c) },
+            { id: 19, title: '相対配置', category: 'CSS レイアウト', skill: 'Position', skillIcon: '📍', skillDesc: 'relative を使えます！', xp: 140, desc: `<b>目標：</b>要素をずらしましょう！`, hint: 'position: relative; top: 20px; left: 30px;', html: '<div class="box">ずらす箱</div>\n', css: '.box {\n  background: #74b9ff;\n  width: 100px;\n  height: 50px;\n}\n', check: (h, c) => /position\s*:\s*relative/i.test(c) && /top\s*:/i.test(c) },
+            { id: 20, title: '絶対配置', category: 'CSS レイアウト', skill: 'Absolute', skillIcon: '📌', skillDesc: 'absolute で自由に配置できます！', xp: 150, desc: `<b>目標：</b>右上にバッジを固定しましょう！`, hint: '子要素に position: absolute; right: 0; top: 0;', html: '<div class="card">\n  カード本体\n  <div class="badge">NEW</div>\n</div>\n', css: '.card {\n  position: relative;\n  width: 200px;\n  height: 100px;\n  background: #eee;\n}\n.badge {\n  background: red;\n  color: white;\n}\n', check: (h, c) => /position\s*:\s*absolute/i.test(c) && /top\s*:/i.test(c) && /right\s*:/i.test(c) },
+            { id: 21, title: '重なりの順序', category: 'CSS レイアウト', skill: 'z-index', skillIcon: '🥞', skillDesc: 'z-index で重なり順を変えられます！', xp: 140, desc: `<b>目標：</b>赤い箱を青い箱より手前に持ってきましょう！`, hint: '赤い箱の z-index の数値を青(5)より大きくします。', html: '<div class="box red">赤</div>\n<div class="box blue">青</div>\n', css: '.box {\n  position: absolute;\n  width: 100px;\n  height: 100px;\n}\n.red {\n  background: #ff7675;\n  top: 20px;\n  left: 20px;\n  z-index: 1;\n}\n.blue {\n  background: #0984e3;\n  top: 50px;\n  left: 50px;\n  z-index: 5;\n}\n', check: (h, c) => /z-index\s*:\s*([6-9]|\d{2,})/i.test(c) },
+
+            // ＝＝＝ CSS Flexbox & Grid ＝＝＝
+            { id: 22, title: 'Flexbox 1 (横並び)', category: 'CSS Flexbox', skill: 'Flexbox', skillIcon: '🛶', skillDesc: 'display: flex を使えます！', xp: 150, desc: `<b>目標：</b>メニューを横並びにして隙間をあけましょう！`, hint: 'display: flex; gap: 20px;', html: '<div class="nav">\n  <a href="#">Home</a>\n  <a href="#">About</a>\n</div>\n', css: '.nav {\n  background: #2d3436;\n  padding: 15px;\n}\n.nav a {\n  color: white;\n}', check: (h, c) => /display\s*:\s*flex/i.test(c) && /gap\s*:/i.test(c) },
+            { id: 23, title: 'Flexbox 2 (中央配置)', category: 'CSS Flexbox', skill: 'Alignment', skillIcon: '🎯', skillDesc: '中央配置ができます！', xp: 160, desc: `<b>目標：</b>要素をど真ん中に配置しましょう！`, hint: 'justify-content: center; align-items: center;', html: '<div class="container">\n  <span>中央</span>\n</div>\n', css: '.container {\n  width: 200px;\n  height: 200px;\n  background: #fdcb6e;\n  display: flex;\n}\n', check: (h, c) => /justify-content\s*:\s*center/i.test(c) && /align-items\s*:\s*center/i.test(c) },
+            { id: 24, title: 'Flexbox 3 (折り返し)', category: 'CSS Flexbox', skill: 'Wrap', skillIcon: '↩️', skillDesc: 'flex-wrap で折り返しができます！', xp: 150, desc: `<b>目標：</b>要素が画面端で折り返すようにしましょう！`, hint: 'flex-wrap: wrap;', html: '<div class="container">\n  <div class="box">1</div><div class="box">2</div><div class="box">3</div>\n</div>\n', css: '.container {\n  display: flex;\n  gap: 10px;\n}\n.box {\n  width: 100px;\n  height: 50px;\n  background: #00cec9;\n}', check: (h, c) => /flex-wrap\s*:\s*wrap/i.test(c) },
+            { id: 25, title: 'CSS Grid (基本的なグリッド)', category: 'CSS Grid', skill: 'Grid', skillIcon: '🔲', skillDesc: 'display: grid が使えます！', xp: 170, desc: `<b>目標：</b>カードを「同じ幅の2列」に並べましょう！`, hint: 'display: grid; grid-template-columns: 1fr 1fr;', html: '<div class="grid">\n  <div class="card">A</div><div class="card">B</div>\n</div>\n', css: '.grid {\n\n}\n.card {\n  background: #a29bfe;\n  padding: 20px;\n}', check: (h, c) => /display\s*:\s*grid/i.test(c) && /grid-template-columns\s*:\s*(1fr\s+1fr|repeat\s*\(\s*2\s*,\s*1fr\s*\))/i.test(c) },
+
+            // ＝＝＝ CSS アニメーション・レスポンシブ ＝＝＝
+            { id: 26, title: 'マウスオーバー効果', category: 'CSS インタラクション', skill: 'Hover', skillIcon: '🖱️', skillDesc: ':hover が使えます！', xp: 160, desc: `<b>目標：</b>ボタンにマウスを乗せた時、背景を赤にしましょう！`, hint: '.btn:hover { background-color: red; }', html: '<button class="btn">Hover Me!</button>\n', css: '.btn {\n  background: blue;\n  color: white;\n  padding: 10px;\n}\n', check: (h, c) => /\.btn:hover\s*{[^}]*background(-color)?\s*:\s*red/i.test(c) },
+            { id: 27, title: 'なめらかな変化', category: 'CSS インタラクション', skill: 'Transition', skillIcon: '💫', skillDesc: 'transition でアニメーションにできます！', xp: 180, desc: `<b>目標：</b>:hover時の変化を「0.5秒」かけましょう！`, hint: '.box の中に transition: 0.5s; を追加します。', html: '<div class="box">Hover</div>\n', css: '.box {\n  background: #55efc4;\n  width: 100px;\n  height: 100px;\n}\n.box:hover {\n  background: #00b894;\n}', check: (h, c) => /\.box[\s\S]*transition\s*:/i.test(c) },
+            { id: 28, title: '要素の変形', category: 'CSS アニメーション', skill: 'Transform', skillIcon: '🔄', skillDesc: 'transform で回転や拡大ができます！', xp: 190, desc: `<b>目標：</b>要素を1.2倍に拡大し、10度回転させましょう！`, hint: 'transform: scale(1.2) rotate(10deg);', html: '<div class="card">Card</div>\n', css: '.card {\n  width: 100px;\n  height: 100px;\n  background: #ff7675;\n  transition: 0.3s;\n}\n.card:hover {\n\n}\n', check: (h, c) => /transform\s*:\s*[\s\S]*scale\s*\(\s*1\.2\s*\)[\s\S]*rotate\s*\(\s*10deg\s*\)/i.test(c) || /transform\s*:\s*[\s\S]*rotate\s*\(\s*10deg\s*\)[\s\S]*scale\s*\(\s*1\.2\s*\)/i.test(c) },
+            { id: 29, title: 'スマホ対応 (メディアクエリ)', category: 'レスポンシブ', skill: 'Media Query', skillIcon: '📱', skillDesc: '@media で画面サイズに対応できます！', xp: 200, desc: `<b>目標：</b>画面幅500px以下で縦並びに変更しましょう！`, hint: '@media (max-width: 500px) { .container { flex-direction: column; } }', html: '<div class="container">\n  <div class="item">左</div><div class="item">右</div>\n</div>\n', css: '.container {\n  display: flex;\n  gap: 10px;\n}\n.item {\n  flex: 1;\n  background: #ffeaa7;\n  padding: 20px;\n}\n', check: (h, c) => /@media[\s\S]*max-width\s*:\s*500px[\s\S]*\.container\s*{[^}]*flex-direction\s*:\s*column/i.test(c) },
+            { id: 30, title: 'キーフレームアニメーション', category: 'CSS アニメーション', skill: 'Keyframes', skillIcon: '✨', skillDesc: '@keyframes を使えます！', xp: 250, desc: `<b>目標：</b>要素がフワフワ動くアニメーションを作りましょう！`, hint: '@keyframes float { 50% { transform: translateY(-20px); } } を定義し、animation: float 2s infinite; を適用します。', html: '<div class="ball"></div>\n', css: '.ball {\n  width: 50px;\n  height: 50px;\n  background: #0984e3;\n  border-radius: 50%;\n}\n', check: (h, c) => /@keyframes\s+[a-zA-Z0-9_-]+/i.test(c) && /animation\s*:/i.test(c) },
+
+            // ＝＝＝ HTML 応用 ＝＝＝
+            { id: 31, title: '複数行テキストと選択肢', category: 'HTML 応用', skill: 'フォーム応用', skillIcon: '📝', skillDesc: 'textareaとselectを使えます！', xp: 120, desc: `<b>目標：</b>お問い合わせフォームを作りましょう！<br>• <code>&lt;textarea&gt;</code> で複数行の入力欄<br>• <code>&lt;select&gt;</code> と <code>&lt;option&gt;</code> でドロップダウン`, hint: '<code>&lt;textarea&gt;&lt;/textarea&gt;</code> と <code>&lt;select&gt;&lt;option&gt;選択肢&lt;/option&gt;&lt;/select&gt;</code>', html: '<!-- textareaとselectを作りましょう -->\n', css: '', check: (h) => /<textarea[^>]*>[\s\S]*<\/textarea>/i.test(h) && /<select[^>]*>[\s\S]*<option[^>]*>[\s\S]*<\/option>[\s\S]*<\/select>/i.test(h) },
+            { id: 32, title: 'メディアの埋め込み', category: 'HTML 応用', skill: '音声・動画', skillIcon: '🎬', skillDesc: 'audio / videoタグでメディアを再生できます！', xp: 130, desc: `<b>目標：</b>動画プレイヤーを配置しましょう！<br><code>controls</code> 属性をつけると再生ボタンが表示されます。`, hint: '<code>&lt;video src="URL" controls&gt;&lt;/video&gt;</code>', html: '<!-- videoタグを書いてみましょう (src="https://www.w3schools.com/html/mov_bbb.mp4") -->\n', css: '', check: (h) => /<video[^>]+src=["'][^"']+["'][^>]*controls/i.test(h) },
+            { id: 33, title: 'アコーディオンUI', category: 'HTML 応用', skill: 'インタラクティブHTML', skillIcon: '🔽', skillDesc: 'details / summary で折りたたみを作れます！', xp: 140, desc: `<b>目標：</b>クリックで開閉する詳細情報を書きましょう！<br><code>&lt;details&gt;</code> の中に、見出しの <code>&lt;summary&gt;</code> と中身を書きます。`, hint: '<code>&lt;details&gt;&lt;summary&gt;タイトル&lt;/summary&gt;内容&lt;/details&gt;</code>', html: '<!-- detailsとsummaryを使ってみましょう -->\n', css: '', check: (h) => /<details[^>]*>[\s\S]*<summary[^>]*>[\s\S]*<\/summary>[\s\S]*<\/details>/i.test(h) },
+            { id: 34, title: '外部ページの埋め込み', category: 'HTML 応用', skill: 'iframe', skillIcon: '🪟', skillDesc: 'iframe で他のWebページを埋め込めます！', xp: 130, desc: `<b>目標：</b>外部のウェブページを埋め込みましょう！`, hint: '<code>&lt;iframe src="URL"&gt;&lt;/iframe&gt;</code> を使います。', html: '<!-- iframeを使って https://example.com を埋め込んでみましょう -->\n', css: '', check: (h) => /<iframe[^>]+src=["']https?:\/\/[^"']+["'][^>]*>/i.test(h) || /<iframe[^>]+src=["']https?:\/\/[^"']+["'][^>]*\/>/i.test(h) },
+            { id: 35, title: 'ベクター画像の描画', category: 'HTML 応用', skill: 'SVG', skillIcon: '🖌️', skillDesc: 'svgタグで図形を描画できます！', xp: 150, desc: `<b>目標：</b>SVGを使って赤い円を描きましょう！<br><code>&lt;svg&gt;</code> の中に <code>&lt;circle cx="50" cy="50" r="40" fill="red" /&gt;</code> を書きます。`, hint: '<code>&lt;svg width="100" height="100"&gt;&lt;circle ... /&gt;&lt;/svg&gt;</code>', html: '<!-- svgで円を描いてみましょう -->\n', css: '', check: (h) => /<svg[^>]*>[\s\S]*<circle[^>]*fill=["']?red["']?[^>]*\/?>(<\/circle>)?[\s\S]*<\/svg>/i.test(h) },
+
+            // ＝＝＝ CSS 応用 ＝＝＝
+            { id: 36, title: '特定の要素を選択', category: 'CSS 応用', skill: '疑似クラス', skillIcon: '🔢', skillDesc: ':nth-child で順番を指定してスタイルを当てられます！', xp: 160, desc: `<b>目標：</b>リストの「偶数番目」の背景色をグレーにしましょう！<br><code>li:nth-child(even)</code> を使います。`, hint: 'CSSタブに <code>li:nth-child(even) { background: gray; }</code> を追加します。', html: '<ul>\n  <li>1</li>\n  <li>2</li>\n  <li>3</li>\n  <li>4</li>\n</ul>\n', css: 'li { padding: 5px; }\n', check: (h, c) => /:nth-child\s*\(\s*(even|2n)\s*\)\s*\{[^}]*background/i.test(c) },
+            { id: 37, title: '要素の前後に追加', category: 'CSS 応用', skill: '疑似要素', skillIcon: '✨', skillDesc: '::before / ::after でHTMLを汚さずに装飾を追加できます！', xp: 170, desc: `<b>目標：</b>ボタンの文字の前に「★」を追加しましょう！<br><code>.btn::before { content: "★ "; }</code> を使います。`, hint: 'CSSタブに <code>.btn::before { content: "★ "; }</code> を追加します。', html: '<button class="btn">お気に入り</button>\n', css: '.btn { padding: 10px 20px; }\n', check: (h, c) => /::?before\s*\{[^}]*content\s*:\s*["'].+["']/i.test(c) },
+            { id: 38, title: '影と透明度', category: 'CSS 装飾', skill: 'エフェクト', skillIcon: '🌫️', skillDesc: 'box-shadow / opacity でリッチな表現ができます！', xp: 160, desc: `<b>目標：</b>箱に影をつけ、少し透明にしましょう！<br>• <code>box-shadow: 5px 5px 10px black;</code><br>• <code>opacity: 0.8;</code>`, hint: 'CSSタブの.boxに影と透明度を追加します。', html: '<div class="box"></div>\n', css: '.box {\n  width: 100px;\n  height: 100px;\n  background: blue;\n}\n', check: (h, c) => /box-shadow\s*:/i.test(c) && /opacity\s*:\s*0?\.\d+/i.test(c) },
+            { id: 39, title: 'グラデーション', category: 'CSS 装飾', skill: 'グラデーション', skillIcon: '🌈', skillDesc: 'linear-gradient で背景をグラデーションにできます！', xp: 170, desc: `<b>目標：</b>背景を赤から青へのグラデーションにしましょう！`, hint: 'CSSタブの.boxに <code>background: linear-gradient(red, blue);</code> を指定します。', html: '<div class="box"></div>\n', css: '.box {\n  width: 200px;\n  height: 200px;\n}\n', check: (h, c) => /background(-image)?\s*:\s*linear-gradient/i.test(c) },
+            { id: 40, title: '背景画像の調整', category: 'CSS 装飾', skill: '背景画像', skillIcon: '🖼️', skillDesc: 'background-size / position で背景画像を綺麗に配置できます！', xp: 180, desc: `<b>目標：</b>背景画像を指定し、要素全体を覆うようにしましょう！<br>• <code>background-image: url("URL");</code><br>• <code>background-size: cover;</code><br>• <code>background-position: center;</code>`, hint: 'CSSタブに画像URL(https://picsum.photos/400/300)を指定し、coverとcenterを設定します。', html: '<div class="hero"></div>\n', css: '.hero {\n  width: 100%;\n  height: 200px;\n}\n', check: (h, c) => /background-image\s*:\s*url/i.test(c) && /background-size\s*:\s*cover/i.test(c) && /background-position\s*:\s*center/i.test(c) },
+            { id: 41, title: 'CSS変数', category: 'CSS 応用', skill: 'カスタムプロパティ', skillIcon: '🧪', skillDesc: 'var() で値を使い回すことができます！', xp: 190, desc: `<b>目標：</b>定義された変数を使って、文字色と背景色を指定しましょう！<br><code>color: var(--main-color);</code> のように使います。`, hint: '<code>color: var(--primary);</code> と <code>background-color: var(--bg);</code> を指定します。', html: '<div class="card">変数をテスト</div>\n', css: ':root {\n  --primary: #ff4757;\n  --bg: #f1f2f6;\n}\n.card {\n  padding: 20px;\n}\n', check: (h, c) => /color\s*:\s*var\s*\(\s*--primary\s*\)/i.test(c) && /background(-color)?\s*:\s*var\s*\(\s*--bg\s*\)/i.test(c) },
+            { id: 42, title: '計算式 (calc)', category: 'CSS 応用', skill: 'calc()', skillIcon: '🧮', skillDesc: 'calc() で幅などを計算して指定できます！', xp: 200, desc: `<b>目標：</b>画面幅(100%)から、50pxを引いた幅を指定しましょう！<br><code>width: calc(100% - 50px);</code> のように書きます。`, hint: 'CSSタブで <code>width: calc(100% - 50px);</code> を設定します。', html: '<div class="bar"></div>\n', css: '.bar {\n  height: 20px;\n  background: #2ed573;\n}\n', check: (h, c) => /width\s*:\s*calc\s*\(\s*100%\s*-\s*50px\s*\)/i.test(c) },
+            { id: 43, title: 'はみ出しの制御', category: 'CSS レイアウト', skill: 'overflow', skillIcon: '✂️', skillDesc: 'overflow で要素がはみ出た時の挙動を制御できます！', xp: 160, desc: `<b>目標：</b>箱からはみ出たテキストをスクロールできるようにしましょう！<br><code>overflow: auto;</code> を指定します。`, hint: 'CSSタブの.boxに <code>overflow: auto;</code> を追加します。', html: '<div class="box">テキストが長すぎると突き抜けてしまいます。これをスクロール可能にしましょう。テキストテキストテキストテキストテキスト</div>\n', css: '.box {\n  width: 100px;\n  height: 100px;\n  border: 1px solid red;\n}\n', check: (h, c) => /overflow(-y)?\s*:\s*(auto|scroll)/i.test(c) },
+            { id: 44, title: 'フィルター効果', category: 'CSS 装飾', skill: 'filter', skillIcon: '🕶️', skillDesc: 'filter で画像をぼかしたり色を変えたりできます！', xp: 170, desc: `<b>目標：</b>画像をモノクロ（白黒）にしましょう！<br><code>filter: grayscale(100%);</code> を指定します。`, hint: 'CSSタブで <code>filter: grayscale(100%);</code> を指定します。', html: '<img src="https://picsum.photos/200" alt="サンプル">\n', css: 'img {\n\n}\n', check: (h, c) => /filter\s*:\s*grayscale/i.test(c) },
+            { id: 45, title: '複雑なセレクタ', category: 'CSS 応用', skill: 'セレクタ', skillIcon: '🎯', skillDesc: '直下の要素だけを狙ってスタイルを当てられます！', xp: 210, desc: `<b>目標：</b><code>.parent</code> の「直下の子要素」の <code>&lt;p&gt;</code> だけ色を赤にしましょう！<br><code>.parent > p { ... }</code> を使います。`, hint: 'CSSタブで <code>.parent > p { color: red; }</code> を指定します。', html: '<div class="parent">\n  <p>直下の段落</p>\n  <div><p>孫の段落</p></div>\n</div>\n', css: '/* ここにセレクタを書く */\n', check: (h, c) => /\.parent\s*>\s*p\s*\{[^}]*color\s*:\s*red/i.test(c) },
+
+            // ＝＝＝ さらに高度なレイアウトとアニメーション ＝＝＝
+            { id: 46, title: 'Gridエリアの命名', category: 'CSS Grid', skill: 'Grid Area', skillIcon: '🗺️', skillDesc: 'grid-template-areas で直感的にレイアウトを組めます！', xp: 230, desc: `<b>目標：</b>ヘッダーとメインのレイアウトを作りましょう！<br>親に <code>grid-template-areas: "header header" "sidebar main";</code> を指定し、子に <code>grid-area: header;</code> 等を割り当てます。`, hint: '.header に grid-area: header; などを指定します。', html: '<div class="grid">\n  <header class="header">Header</header>\n  <aside class="sidebar">Side</aside>\n  <main class="main">Main</main>\n</div>\n', css: '.grid {\n  display: grid;\n  grid-template-areas: "header header" "sidebar main";\n  gap: 5px;\n}\n.header {\n  background: #ff7675;\n}\n.sidebar {\n  background: #74b9ff;\n}\n.main {\n  background: #55efc4;\n}', check: (h, c) => /grid-area\s*:\s*header/i.test(c) && /grid-area\s*:\s*main/i.test(c) },
+            { id: 47, title: 'Flexboxの拡張', category: 'CSS Flexbox', skill: 'flex-grow', skillIcon: '↔️', skillDesc: 'flex-growで余白を自動で埋められます！', xp: 220, desc: `<b>目標：</b>真ん中の要素(<code>.grow</code>)だけ、余ったスペースいっぱいに広げましょう！<br><code>flex-grow: 1;</code> を指定します。`, hint: 'CSSタブの .grow に <code>flex-grow: 1;</code> を追加します。', html: '<div class="flex">\n  <div class="box">固定</div>\n  <div class="box grow">伸びる</div>\n  <div class="box">固定</div>\n</div>\n', css: '.flex {\n  display: flex;\n  width: 100%;\n}\n.box {\n  padding: 10px;\n  border: 1px solid #333;\n}\n.grow {\n\n}\n', check: (h, c) => /flex-grow\s*:\s*1/i.test(c) || /flex\s*:\s*1/i.test(c) },
+            { id: 48, title: '3D変形', category: 'CSS アニメーション', skill: '3D Transform', skillIcon: '🧊', skillDesc: 'perspective と rotateX/Y で3D表現ができます！', xp: 240, desc: `<b>目標：</b>要素をX軸（横軸）を基準に45度奥に傾けましょう！<br><code>transform: rotateX(45deg);</code> を指定します。`, hint: 'CSSタブの.cardに <code>transform: rotateX(45deg);</code> を追加します。', html: '<div class="scene">\n  <div class="card">3D</div>\n</div>\n', css: '.scene {\n  perspective: 500px;\n  padding: 50px;\n}\n.card {\n  width: 100px;\n  height: 100px;\n  background: #e84393;\n  text-align: center;\n  line-height: 100px;\n}\n', check: (h, c) => /transform\s*:\s*rotateX\s*\(\s*45deg\s*\)/i.test(c) },
+            { id: 49, title: 'アニメーションの遅延', category: 'CSS アニメーション', skill: 'Animation Delay', skillIcon: '⏳', skillDesc: 'animation-delay で動きをずらすことができます！', xp: 250, desc: `<b>目標：</b>2つ目のボールが「0.5秒遅れて」動き出すようにしましょう！<br><code>animation-delay: 0.5s;</code> を指定します。`, hint: 'CSSタブの.ball2に <code>animation-delay: 0.5s;</code> を指定します。', html: '<div class="ball ball1"></div>\n<div class="ball ball2"></div>\n', css: '.ball {\n  width: 30px;\n  height: 30px;\n  background: #e17055;\n  border-radius: 50%;\n  animation: bounce 1s infinite alternate;\n  margin: 10px;\n}\n.ball2 {\n\n}\n@keyframes bounce {\n  to { transform: translateX(100px); }\n}\n', check: (h, c) => /animation-delay\s*:\s*0\.5s/i.test(c) },
+            { id: 50, title: 'カードUI', category: 'シャドウ', skill: 'HTML/CSS マスター', skillIcon: '👑', skillDesc: '全ての知識を使って美しいUIを作成できます！', xp: 500, desc: `<b>目標：</b>これまで学んだ知識をフル活用して、美しいカードコンポーネントを完成させましょう！<br>画像の角を丸くし、全体に影をつけ、ボタンを装飾してください。（※影をつければクリアになります）`, hint: '自由にHTMLとCSSを記述して、見栄えの良いカードUIを作りましょう。box-shadow, border-radius などを活用してください。', html: '<div class="card">\n  <img src="https://picsum.photos/300/150" alt="サムネ" style="width:100%; display:block;">\n  <div style="padding: 15px;">\n    <h2>タイトル</h2>\n    <p>説明文がここに入ります。</p>\n    <button>詳細を見る</button>\n  </div>\n</div>\n', css: 'body {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  background: #f5f6fa;\n  margin: 0;\n}\n.card {\n  background: white;\n  width: 300px;\n  border-radius: 10px;\n  overflow: hidden;\n  /* ここに影(box-shadow)を追加してください */\n\n}\n', check: (h, c) => /<div[^>]*class=["']card["'][^>]*>/i.test(h) && /box-shadow\s*:/i.test(c) }
+        ];
+
+        // ─── スライドデータ (全50レベル) ───
+        const slidesData = [
+            // 1: はじめての見出し
+            [{ num: 'STEP 1', title: '見出しタグ &lt;h1&gt;〜&lt;h6&gt; とは？', html: `<p class="slide-text"><b>見出し (Heading)</b> は文章の階層を表します。<code>&lt;h1&gt;</code>が最大、<code>&lt;h6&gt;</code>が最小です。</p><div class="slide-code-block"><span class="tag">&lt;h1&gt;</span>一番大きい見出し<span class="tag">&lt;/h1&gt;</span>\n<span class="tag">&lt;h2&gt;</span>二番目の見出し<span class="tag">&lt;/h2&gt;</span>\n<span class="tag">&lt;h3&gt;</span>三番目の見出し<span class="tag">&lt;/h3&gt;</span></div><div class="slide-visual" style="flex-direction:column;align-items:flex-start;gap:4px;"><div style="font-size:26px;font-weight:800;color:#4fc1ff">h1 見出し</div><div style="font-size:20px;font-weight:700;color:#7cb8f5">h2 見出し</div><div style="font-size:16px;font-weight:600;color:#a0c4f8">h3 見出し</div></div><div class="slide-tip">課題は <code>&lt;h1&gt;Hello, World!&lt;/h1&gt;</code> と書くだけでクリアです！h1 は1ページに1つが基本です。</div>` }],
+            // 2: テキストと段落
+            [{ num: 'STEP 1', title: '段落 &lt;p&gt; と強調 &lt;strong&gt;', html: `<p class="slide-text"><b>&lt;p&gt;</b> (paragraph) は段落を作るブロック要素です。<b>&lt;strong&gt;</b> は<strong style="color:#fff">太字で強調</strong>するインライン要素です。</p><div class="slide-code-block"><span class="tag">&lt;p&gt;</span>\n  HTMLは<span class="tag">&lt;strong&gt;</span>Webの骨格<span class="tag">&lt;/strong&gt;</span>を作ります。\n<span class="tag">&lt;/p&gt;</span></div><div class="slide-visual"><p style="font-size:14px;color:#ccc;margin:0">HTMLは<strong style="color:#fff">Webの骨格</strong>を作ります。</p></div><div class="slide-tip">&lt;p&gt; の中に &lt;strong&gt; を入れる「入れ子」の構造が基本です。両方書けばクリアです！</div>` }],
+            // 3: リンクを貼ろう
+            [{ num: 'STEP 1', title: 'リンクタグ &lt;a&gt; の使い方', html: `<p class="slide-text"><b>&lt;a&gt;</b> (anchor) タグで他のページへのリンクを作ります。<code>href</code> 属性にURLを指定します。</p><div class="slide-code-block"><span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="val">"https://google.com"</span><span class="tag">&gt;</span>\n  Googleへ移動\n<span class="tag">&lt;/a&gt;</span></div>`, },
+            { num: 'STEP 2', title: '新しいタブで開く', html: `<p class="slide-text"><code>target="_blank"</code> を追加すると<b>新しいタブ</b>で開きます。</p><div class="slide-code-block"><span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="val">"https://google.com"</span>\n   <span class="attr">target</span>=<span class="val">"_blank"</span><span class="tag">&gt;</span>新しいタブ<span class="tag">&lt;/a&gt;</span></div><div class="slide-tip">課題は <code>href="https://..."</code> の形式でURLを指定すればOKです！</div>` }],
+            // 4: 画像を表示しよう
+            [{ num: 'STEP 1', title: '画像タグ &lt;img&gt; の基本', html: `<p class="slide-text"><b>&lt;img&gt;</b> は閉じタグ不要の「空要素」です。<code>src</code> に画像URL、<code>alt</code> に代替テキストを書きます。</p><div class="slide-code-block"><span class="tag">&lt;img</span>\n  <span class="attr">src</span>=<span class="val">"https://picsum.photos/200/150"</span>\n  <span class="attr">alt</span>=<span class="val">"サンプル画像"</span>\n<span class="tag">&gt;</span></div><div class="slide-visual"><img src="https://picsum.photos/200/100" alt="サンプル" style="border-radius:6px;max-width:100%"></div><div class="slide-tip">alt はアクセシビリティとSEOのために必ず書きましょう。</div>` }],
+            // 5: 箇条書きリスト
+            [{ num: 'STEP 1', title: 'リスト &lt;ul&gt; と &lt;li&gt;', html: `<p class="slide-text"><b>&lt;ul&gt;</b> (unordered list) で箇条書きリスト、<b>&lt;ol&gt;</b> で番号付きリストを作ります。各項目は <code>&lt;li&gt;</code> で囲みます。</p><div class="slide-code-block"><span class="tag">&lt;ul&gt;</span>\n  <span class="tag">&lt;li&gt;</span>りんご<span class="tag">&lt;/li&gt;</span>\n  <span class="tag">&lt;li&gt;</span>バナナ<span class="tag">&lt;/li&gt;</span>\n  <span class="tag">&lt;li&gt;</span>みかん<span class="tag">&lt;/li&gt;</span>\n<span class="tag">&lt;/ul&gt;</span></div><div class="slide-tip">課題は &lt;ul&gt; の中に &lt;li&gt; を3つ以上書けばOKです！</div>` }],
+            // 6: テーブル
+            [{ num: 'STEP 1', title: 'テーブルの構造', html: `<p class="slide-text">table → tr（行）→ th/td（列）の順に入れ子にします。<b>th</b> はヘッダー（太字）、<b>td</b> はデータセルです。</p><div class="slide-code-block"><span class="tag">&lt;table&gt;</span>\n  <span class="tag">&lt;tr&gt;</span>\n    <span class="tag">&lt;th&gt;</span>名前<span class="tag">&lt;/th&gt;&lt;th&gt;</span>年齢<span class="tag">&lt;/th&gt;</span>\n  <span class="tag">&lt;/tr&gt;</span>\n  <span class="tag">&lt;tr&gt;</span>\n    <span class="tag">&lt;td&gt;</span>田中<span class="tag">&lt;/td&gt;&lt;td&gt;</span>25<span class="tag">&lt;/td&gt;</span>\n  <span class="tag">&lt;/tr&gt;</span>\n<span class="tag">&lt;/table&gt;</span></div><div class="slide-visual"><table style="border-collapse:collapse;font-size:13px"><tr><th style="border:1px solid #555;padding:5px 12px;background:#1a3560;color:#7cb8f5">名前</th><th style="border:1px solid #555;padding:5px 12px;background:#1a3560;color:#7cb8f5">年齢</th></tr><tr><td style="border:1px solid #555;padding:5px 12px;color:#ccc">田中</td><td style="border:1px solid #555;padding:5px 12px;color:#ccc">25</td></tr></table></div>` }],
+            // 7: 入力フォーム
+            [{ num: 'STEP 1', title: '入力欄とボタン', html: `<p class="slide-text"><code>&lt;input type="text"&gt;</code> でテキスト入力欄、<code>&lt;button&gt;</code> でボタンを作ります。</p><div class="slide-code-block"><span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="val">"text"</span> <span class="attr">placeholder</span>=<span class="val">"名前を入力"</span><span class="tag">&gt;</span>\n<span class="tag">&lt;button&gt;</span>送信<span class="tag">&lt;/button&gt;</span></div><div class="slide-visual" style="gap:8px"><input type="text" placeholder="名前を入力" style="padding:6px 10px;border-radius:4px;border:1px solid #555;background:#1a1a1a;color:#ccc;font-size:13px"><button style="padding:6px 14px;background:#0e639c;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer">送信</button></div>` }],
+            // 8: チェックボックス
+            [{ num: 'STEP 1', title: 'チェックボックスとラジオ', html: `<p class="slide-text"><code>type="checkbox"</code> で複数選択可、<code>type="radio"</code> で1つだけ選択できる入力を作ります。</p><div class="slide-code-block"><span class="cm">/* 複数選択可 */</span>\n<span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="val">"checkbox"</span><span class="tag">&gt;</span> HTML\n<span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="val">"checkbox"</span><span class="tag">&gt;</span> CSS\n\n<span class="cm">/* 1つだけ選択 */</span>\n<span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="val">"radio"</span> <span class="attr">name</span>=<span class="val">"g"</span><span class="tag">&gt;</span> 赤\n<span class="tag">&lt;input</span> <span class="attr">type</span>=<span class="val">"radio"</span> <span class="attr">name</span>=<span class="val">"g"</span><span class="tag">&gt;</span> 青</div><div class="slide-tip">課題は <code>type="checkbox"</code> を1つ書けばOKです！</div>` }],
+            // 9: div と span
+            [{ num: 'STEP 1', title: 'div（ブロック）と span（インライン）', html: `<p class="slide-text"><b>&lt;div&gt;</b> は幅全体を占めるブロック要素。<b>&lt;span&gt;</b> は文章の一部を囲むインライン要素です。</p><div class="slide-code-block"><span class="tag">&lt;div&gt;</span>\n  <span class="tag">&lt;p&gt;</span>私は<span class="tag">&lt;span</span> <span class="attr">style</span>=<span class="val">"color:red"</span><span class="tag">&gt;</span>HTML<span class="tag">&lt;/span&gt;</span>が好きです。<span class="tag">&lt;/p&gt;</span>\n<span class="tag">&lt;/div&gt;</span></div><div class="slide-tip">課題は &lt;div&gt; の中に &lt;span&gt; を入れた構造を書けばOKです！</div>` }],
+            // 10: セマンティック
+            [{ num: 'STEP 1', title: 'セマンティックタグ', html: `<p class="slide-text">意味を持つタグを使うとコードが読みやすくなりSEOにも有利です。</p><div class="slide-code-block"><span class="tag">&lt;header&gt;</span>ロゴ・ナビ<span class="tag">&lt;/header&gt;</span>\n<span class="tag">&lt;main&gt;</span>メインコンテンツ<span class="tag">&lt;/main&gt;</span>\n<span class="tag">&lt;footer&gt;</span>著作権情報<span class="tag">&lt;/footer&gt;</span></div><div class="slide-visual" style="flex-direction:column;gap:5px;width:100%"><div style="background:#1a3560;padding:5px 12px;border-radius:4px;color:#7cb8f5;text-align:center;font-size:12px">&lt;header&gt;</div><div style="background:#1a3d1a;padding:5px 12px;border-radius:4px;color:#7ecb7e;text-align:center;font-size:12px">&lt;main&gt;</div><div style="background:#3a2a1a;padding:5px 12px;border-radius:4px;color:#d4c875;text-align:center;font-size:12px">&lt;footer&gt;</div></div><div class="slide-tip">課題は header, main, footer の3つを書けばOKです！</div>` }],
+            // 11: 文字色・背景色
+            [{ num: 'STEP 1', title: 'color と background-color', html: `<p class="slide-text"><code>color</code> でテキスト色、<code>background-color</code> で背景色を指定します。</p><div class="slide-code-block"><span class="attr">h1</span> {\n  <span class="attr">color</span>: <span class="val">white</span>;\n  <span class="attr">background-color</span>: <span class="val">blue</span>;\n}</div><div class="slide-visual"><h1 style="color:white;background:blue;padding:8px 20px;border-radius:4px;font-size:18px;margin:0">スタイルを変えてみよう</h1></div>`, },
+            { num: 'STEP 2', title: '色の指定方法', html: `<p class="slide-text">色は3種類の書き方ができます。</p><div class="slide-code-block"><span class="cm">/* 色名 */</span>   <span class="attr">color</span>: <span class="val">red</span>;\n<span class="cm">/* 16進数 */</span> <span class="attr">color</span>: <span class="val">#ff0000</span>;\n<span class="cm">/* RGB */</span>    <span class="attr">color</span>: <span class="val">rgb(255,0,0)</span>;</div><div class="slide-tip">課題は color と background(-color) を両方指定すればOKです！</div>` }],
+            // 12: フォント
+            [{ num: 'STEP 1', title: 'フォントサイズと太さ', html: `<p class="slide-text"><code>font-size</code> で文字の大きさ、<code>font-weight</code> で太さを指定します。</p><div class="slide-code-block"><span class="attr">p</span> {\n  <span class="attr">font-size</span>: <span class="val">24px</span>;\n  <span class="attr">font-weight</span>: <span class="val">bold</span>;\n}</div><div class="slide-visual" style="flex-direction:column;gap:8px"><p style="font-size:12px;color:#888;margin:0">通常 (12px)</p><p style="font-size:24px;font-weight:bold;color:#4fc1ff;margin:0">24px + bold</p></div>` }],
+            // 13: テキスト配置
+            [{ num: 'STEP 1', title: 'text-align と text-decoration', html: `<p class="slide-text"><code>text-align</code> でテキストの水平位置、<code>text-decoration</code> で下線などの装飾を指定します。</p><div class="slide-code-block"><span class="attr">h2</span> {\n  <span class="attr">text-align</span>: <span class="val">center</span>;\n  <span class="attr">text-decoration</span>: <span class="val">underline</span>;\n}</div><div class="slide-visual"><h2 style="text-align:center;text-decoration:underline;color:#4fc1ff;font-size:18px;width:100%;margin:0">重要なお知らせ</h2></div>` }],
+            // 14: 幅と高さ
+            [{ num: 'STEP 1', title: 'width と height', html: `<p class="slide-text"><code>width</code> で幅、<code>height</code> で高さを指定します。単位は px（ピクセル）や %（割合）が使えます。</p><div class="slide-code-block"><span class="attr">.box</span> {\n  <span class="attr">width</span>: <span class="val">200px</span>;\n  <span class="attr">height</span>: <span class="val">100px</span>;\n  <span class="attr">background-color</span>: <span class="val">#4fc1ff</span>;\n}</div><div class="slide-visual"><div style="width:200px;height:80px;background:#4fc1ff;border-radius:4px"></div></div>` }],
+            // 15: Padding
+            [{ num: 'STEP 1', title: 'padding — 内側の余白', html: `<p class="slide-text"><b>padding</b> は要素の内側（コンテンツとボーダーの間）の余白です。</p><div class="slide-code-block"><span class="attr">.box</span> {\n  <span class="attr">padding</span>: <span class="val">20px</span>;        <span class="cm">全方向</span>\n  <span class="attr">padding</span>: <span class="val">10px 20px</span>;  <span class="cm">上下 左右</span>\n  <span class="attr">padding-top</span>: <span class="val">10px</span>; <span class="cm">上だけ</span>\n}</div><div class="slide-visual"><div style="background:#ffeaa7;padding:20px;border-radius:4px;color:#333;font-size:13px">padding: 20px のボックス</div></div>` }],
+            // 16: Margin
+            [{ num: 'STEP 1', title: 'margin — 外側の余白', html: `<p class="slide-text"><b>margin</b> は要素の外側の余白です。<code>margin: 0 auto</code> で水平中央配置ができます。</p><div class="slide-code-block"><span class="attr">.box</span> {\n  <span class="attr">width</span>: <span class="val">150px</span>;\n  <span class="attr">margin</span>: <span class="val">0 auto</span>;       <span class="cm">中央配置</span>\n  <span class="attr">margin-bottom</span>: <span class="val">20px</span>; <span class="cm">下の余白</span>\n}</div><div class="slide-tip"><code>margin: 0 auto</code> は幅を指定した要素を水平中央に配置する定番テクニックです！</div>` }],
+            // 17: Border
+            [{ num: 'STEP 1', title: 'border と border-radius', html: `<p class="slide-text"><code>border</code> で枠線、<code>border-radius</code> で角を丸くできます。50% にすると完全な円になります。</p><div class="slide-code-block"><span class="attr">img</span> {\n  <span class="attr">border</span>: <span class="val">5px solid blue</span>;\n  <span class="attr">border-radius</span>: <span class="val">50%</span>; <span class="cm">← 円形</span>\n}</div><div class="slide-visual" style="gap:20px"><img src="https://picsum.photos/70/70" style="border:3px solid #4fc1ff;border-radius:50%" alt=""><img src="https://picsum.photos/70/70?grayscale" style="border:3px solid #4fc1ff;border-radius:10px" alt=""></div>` }],
+            // 18: Display
+            [{ num: 'STEP 1', title: 'display プロパティ', html: `<p class="slide-text"><code>display</code> で要素の表示形式を変えます。block は縦に積まれ、inline は横に並びます。</p><div class="slide-code-block"><span class="attr">display</span>: <span class="val">block</span>;        <span class="cm">縦に並ぶ（幅全体）</span>\n<span class="attr">display</span>: <span class="val">inline</span>;       <span class="cm">横に並ぶ（幅高さ不可）</span>\n<span class="attr">display</span>: <span class="val">inline-block</span>; <span class="cm">横並び+幅高さ可</span>\n<span class="attr">display</span>: <span class="val">none</span>;         <span class="cm">非表示</span></div><div class="slide-tip">課題は span に <code>display: block</code> を指定して縦並びにすればOKです！</div>` }],
+            // 19: Position relative
+            [{ num: 'STEP 1', title: 'position: relative', html: `<p class="slide-text"><code>position: relative</code> は元の位置を基準にして要素をずらします。他のレイアウトには影響しません。</p><div class="slide-code-block"><span class="attr">.box</span> {\n  <span class="attr">position</span>: <span class="val">relative</span>;\n  <span class="attr">top</span>: <span class="val">20px</span>;  <span class="cm">下に20px</span>\n  <span class="attr">left</span>: <span class="val">30px</span>; <span class="cm">右に30px</span>\n}</div><div class="slide-tip">top/bottom/left/right は position を指定した要素にのみ効きます。</div>` }],
+            // 20: Position absolute
+            [{ num: 'STEP 1', title: 'position: absolute', html: `<p class="slide-text"><code>position: absolute</code> は、直近の position 指定済み祖先要素を基準に自由配置します。</p><div class="slide-code-block"><span class="attr">.card</span>  { <span class="attr">position</span>: <span class="val">relative</span>; }\n\n<span class="attr">.badge</span> {\n  <span class="attr">position</span>: <span class="val">absolute</span>;\n  <span class="attr">top</span>: <span class="val">0</span>; <span class="attr">right</span>: <span class="val">0</span>;\n}</div><div class="slide-visual" style="position:relative;width:200px;height:90px;background:#eee;border-radius:4px"><span style="color:#333;font-size:12px;padding:8px;display:block">カード本体</span><div style="position:absolute;top:0;right:0;background:red;color:white;padding:2px 8px;font-size:11px;font-weight:bold;border-radius:0 4px 0 4px">NEW</div></div>` }],
+            // 21: z-index
+            [{ num: 'STEP 1', title: 'z-index — 重なり順', html: `<p class="slide-text"><code>z-index</code> は要素の重なり順を数値で指定します。大きいほど手前に表示されます。</p><div class="slide-code-block"><span class="attr">.red</span>  { <span class="attr">z-index</span>: <span class="val">10</span>; } <span class="cm">手前</span>\n<span class="attr">.blue</span> { <span class="attr">z-index</span>: <span class="val">5</span>;  } <span class="cm">奥</span></div><div class="slide-tip">z-index は <code>position</code> を指定した要素（relative/absolute/fixed等）にのみ効きます。課題は赤の z-index を 6 以上にすればOKです！</div>` }],
+            // 22: Flexbox 横並び
+            [{ num: 'STEP 1', title: 'display: flex で横並び', html: `<p class="slide-text">親要素に <code>display: flex</code> を指定すると、子要素が横並びになります。<code>gap</code> で間隔を指定できます。</p><div class="slide-code-block"><span class="attr">.nav</span> {\n  <span class="attr">display</span>: <span class="val">flex</span>;\n  <span class="attr">gap</span>: <span class="val">20px</span>; <span class="cm">要素間の隙間</span>\n}</div><div class="slide-visual"><div style="display:flex;gap:20px;background:#2d3436;padding:12px;border-radius:4px"><a href="#" style="color:white;text-decoration:none;font-size:13px">Home</a><a href="#" style="color:white;text-decoration:none;font-size:13px">About</a><a href="#" style="color:white;text-decoration:none;font-size:13px">Contact</a></div></div>` }],
+            // 23: Flexbox 中央
+            [{ num: 'STEP 1', title: 'Flexbox で完全中央配置', html: `<p class="slide-text"><code>justify-content: center</code>（水平）と <code>align-items: center</code>（垂直）で要素をど真ん中に配置できます。</p><div class="slide-code-block"><span class="attr">.container</span> {\n  <span class="attr">display</span>: <span class="val">flex</span>;\n  <span class="attr">justify-content</span>: <span class="val">center</span>;\n  <span class="attr">align-items</span>: <span class="val">center</span>;\n}</div><div class="slide-visual" style="width:140px;height:140px;background:#fdcb6e;display:flex;justify-content:center;align-items:center;border-radius:4px"><span style="font-weight:bold;color:#333">中央</span></div><div class="slide-tip">これはCSSで最もよく使う中央配置テクニックです！</div>` }],
+            // 24: Flexbox wrap
+            [{ num: 'STEP 1', title: 'flex-wrap で折り返し', html: `<p class="slide-text"><code>flex-wrap: wrap</code> で、子要素が親の幅を超えた時に自動的に次の行に折り返します。</p><div class="slide-code-block"><span class="attr">.container</span> {\n  <span class="attr">display</span>: <span class="val">flex</span>;\n  <span class="attr">flex-wrap</span>: <span class="val">wrap</span>;\n  <span class="attr">gap</span>: <span class="val">10px</span>;\n}</div><div class="slide-tip">レスポンシブなカードレイアウトを作る時に非常に便利なプロパティです！</div>` }],
+            // 25: Grid
+            [{ num: 'STEP 1', title: 'CSS Grid — 2次元レイアウト', html: `<p class="slide-text">Grid は行×列の2次元レイアウトです。<code>grid-template-columns</code> で列数と幅を指定します。</p><div class="slide-code-block"><span class="attr">.grid</span> {\n  <span class="attr">display</span>: <span class="val">grid</span>;\n  <span class="attr">grid-template-columns</span>: <span class="val">1fr 1fr</span>;\n  <span class="attr">gap</span>: <span class="val">10px</span>;\n}</div><div class="slide-visual" style="width:100%"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><div style="background:#a29bfe;padding:14px;border-radius:4px;text-align:center;color:#fff">A</div><div style="background:#a29bfe;padding:14px;border-radius:4px;text-align:center;color:#fff">B</div></div></div><div class="slide-tip"><code>1fr</code> は「利用可能スペースの1等分」。<code>repeat(2, 1fr)</code> と書いても同じ意味です！</div>` }],
+            // 26: Hover
+            [{ num: 'STEP 1', title: ':hover 疑似クラス', html: `<p class="slide-text"><code>:hover</code> はマウスが乗った時だけ適用されるスタイルです。インタラクティブUIの基本です。</p><div class="slide-code-block"><span class="attr">.btn</span> {\n  <span class="attr">background</span>: <span class="val">blue</span>;\n}\n<span class="attr">.btn:hover</span> {\n  <span class="attr">background-color</span>: <span class="val">red</span>;\n}</div><div class="slide-tip">課題の正解は <code>.btn:hover { background-color: red; }</code> と書くだけです！</div>` }],
+            // 27: Transition
+            [{ num: 'STEP 1', title: 'transition でなめらかな変化', html: `<p class="slide-text"><code>transition</code> を指定すると、スタイル変化がアニメーションになります。元の要素側（:hover ではない方）に書きます。</p><div class="slide-code-block"><span class="attr">.box</span> {\n  <span class="attr">background</span>: <span class="val">#55efc4</span>;\n  <span class="attr">transition</span>: <span class="val">0.5s</span>; <span class="cm">← ここに書く</span>\n}\n<span class="attr">.box:hover</span> {\n  <span class="attr">background</span>: <span class="val">#00b894</span>;\n}</div><div class="slide-tip">課題は .box に <code>transition: 0.5s;</code> を追加すればOKです！</div>` }],
+            // 28: Transform
+            [{ num: 'STEP 1', title: 'transform で変形', html: `<p class="slide-text"><code>transform</code> で拡大・回転・移動ができます。複数の変形を同時に指定できます。</p><div class="slide-code-block"><span class="attr">.card:hover</span> {\n  <span class="attr">transform</span>: <span class="val">scale(1.2) rotate(10deg)</span>;\n}</div><div class="slide-tip"><code>scale(1.2)</code>=1.2倍拡大、<code>rotate(10deg)</code>=10度回転。スペース区切りで複数指定できます。</div>` }],
+            // 29: Media Query
+            [{ num: 'STEP 1', title: '@media でレスポンシブ対応', html: `<p class="slide-text"><code>@media</code> で画面サイズに応じてスタイルを変えられます。スマホ対応の基本です。</p><div class="slide-code-block"><span class="kw">@media</span> (<span class="attr">max-width</span>: <span class="val">500px</span>) {\n  <span class="attr">.container</span> {\n    <span class="attr">flex-direction</span>: <span class="val">column</span>;\n  }\n}</div><div class="slide-tip">モバイルファーストでは <code>min-width</code>、PCファーストでは <code>max-width</code> を使います。</div>` }],
+            // 30: Keyframes
+            [{ num: 'STEP 1', title: '@keyframes アニメーション', html: `<p class="slide-text"><code>@keyframes</code> で動きを定義し、<code>animation</code> で要素に適用します。</p><div class="slide-code-block"><span class="kw">@keyframes</span> <span class="val">float</span> {\n  <span class="num">50%</span> { <span class="attr">transform</span>: <span class="val">translateY(-20px)</span>; }\n}\n<span class="attr">.ball</span> {\n  <span class="attr">animation</span>: <span class="val">float 2s infinite</span>;\n}</div><div class="slide-tip">animation の値は「名前 時間 繰り返し」の順で書きます！</div>` }],
+            // 31: textarea/select
+            [{ num: 'STEP 1', title: 'textarea と select', html: `<p class="slide-text"><code>&lt;textarea&gt;</code> は複数行テキスト入力、<code>&lt;select&gt;</code>+<code>&lt;option&gt;</code> はドロップダウン選択です。</p><div class="slide-code-block"><span class="tag">&lt;textarea</span> <span class="attr">rows</span>=<span class="val">"4"</span><span class="tag">&gt;&lt;/textarea&gt;</span>\n\n<span class="tag">&lt;select&gt;</span>\n  <span class="tag">&lt;option&gt;</span>選択肢1<span class="tag">&lt;/option&gt;</span>\n  <span class="tag">&lt;option&gt;</span>選択肢2<span class="tag">&lt;/option&gt;</span>\n<span class="tag">&lt;/select&gt;</span></div>` }],
+            // 32: video
+            [{ num: 'STEP 1', title: '&lt;video&gt; で動画を埋め込む', html: `<p class="slide-text"><code>&lt;video&gt;</code> タグで動画プレイヤーを配置できます。<code>controls</code> 属性で再生UIを表示します。</p><div class="slide-code-block"><span class="tag">&lt;video</span>\n  <span class="attr">src</span>=<span class="val">"video.mp4"</span>\n  <span class="attr">controls</span>\n  <span class="attr">width</span>=<span class="val">"400"</span>\n<span class="tag">&gt;&lt;/video&gt;</span></div><div class="slide-tip"><code>controls</code> は値なしで書くだけでOKです（boolean属性）。</div>` }],
+            // 33: details/summary
+            [{ num: 'STEP 1', title: 'details と summary', html: `<p class="slide-text">JSなしでクリック開閉するアコーディオンが作れます。</p><div class="slide-code-block"><span class="tag">&lt;details&gt;</span>\n  <span class="tag">&lt;summary&gt;</span>クリックして開く<span class="tag">&lt;/summary&gt;</span>\n  <span class="tag">&lt;p&gt;</span>ここに詳細が入ります。<span class="tag">&lt;/p&gt;</span>\n<span class="tag">&lt;/details&gt;</span></div><div class="slide-visual"><details style="font-size:13px;color:#ccc;width:100%"><summary style="cursor:pointer;color:#4fc1ff">クリックして開く</summary><p style="margin-top:8px">ここに詳細が入ります。</p></details></div>` }],
+            // 34: iframe
+            [{ num: 'STEP 1', title: '&lt;iframe&gt; で外部コンテンツを埋め込む', html: `<p class="slide-text"><code>&lt;iframe&gt;</code> で他のウェブページや地図・動画を自分のページに埋め込めます。</p><div class="slide-code-block"><span class="tag">&lt;iframe</span>\n  <span class="attr">src</span>=<span class="val">"https://example.com"</span>\n  <span class="attr">width</span>=<span class="val">"600"</span>\n  <span class="attr">height</span>=<span class="val">"400"</span>\n<span class="tag">&gt;&lt;/iframe&gt;</span></div><div class="slide-tip">Google Maps や YouTube の「共有 → 埋め込む」ボタンも iframe を使っています。</div>` }],
+            // 35: SVG
+            [{ num: 'STEP 1', title: 'SVG でベクター図形を描く', html: `<p class="slide-text">SVGはHTML内で直接図形を描けるマークアップです。拡大しても画質が落ちません。</p><div class="slide-code-block"><span class="tag">&lt;svg</span> <span class="attr">width</span>=<span class="val">"100"</span> <span class="attr">height</span>=<span class="val">"100"</span><span class="tag">&gt;</span>\n  <span class="tag">&lt;circle</span> <span class="attr">cx</span>=<span class="val">"50"</span> <span class="attr">cy</span>=<span class="val">"50"</span>\n    <span class="attr">r</span>=<span class="val">"40"</span> <span class="attr">fill</span>=<span class="val">"red"</span> <span class="tag">/&gt;</span>\n<span class="tag">&lt;/svg&gt;</span></div><div class="slide-visual"><svg width="80" height="80"><circle cx="40" cy="40" r="35" fill="red"/></svg></div>` }],
+            // 36: nth-child
+            [{ num: 'STEP 1', title: ':nth-child 疑似クラス', html: `<p class="slide-text"><code>:nth-child()</code> で特定の順番の子要素だけにスタイルを適用できます。</p><div class="slide-code-block"><span class="attr">li:nth-child(even)</span> { <span class="cm">偶数番目</span>\n  <span class="attr">background</span>: <span class="val">gray</span>;\n}\n<span class="attr">li:nth-child(odd)</span>  { <span class="cm">奇数番目</span> }\n<span class="attr">li:nth-child(3)</span>   { <span class="cm">3番目のみ</span> }</div><div class="slide-visual" style="flex-direction:column;width:100%;gap:0"><div style="padding:5px 10px;font-size:12px;color:#ccc">1. 奇数</div><div style="padding:5px 10px;font-size:12px;color:#ccc;background:#555">2. 偶数</div><div style="padding:5px 10px;font-size:12px;color:#ccc">3. 奇数</div><div style="padding:5px 10px;font-size:12px;color:#ccc;background:#555">4. 偶数</div></div>` }],
+            // 37: before/after
+            [{ num: 'STEP 1', title: '::before / ::after 疑似要素', html: `<p class="slide-text">HTMLを変えずに要素の前後にコンテンツを挿入できます。<code>content</code> プロパティが必須です。</p><div class="slide-code-block"><span class="attr">.btn::before</span> {\n  <span class="attr">content</span>: <span class="val">"★ "</span>; <span class="cm">← 必須！</span>\n}</div><div class="slide-tip"><code>content: ""</code> と空でも書く必要があります（省略不可）。</div>` }],
+            // 38: box-shadow/opacity
+            [{ num: 'STEP 1', title: 'box-shadow と opacity', html: `<p class="slide-text"><code>box-shadow</code> で影を、<code>opacity</code> で透明度（0=透明〜1=不透明）を指定します。</p><div class="slide-code-block"><span class="attr">.box</span> {\n  <span class="attr">box-shadow</span>: <span class="val">5px 5px 10px black</span>;\n  <span class="cm">            横  縦  ぼかし 色</span>\n  <span class="attr">opacity</span>: <span class="val">0.8</span>;\n}</div><div class="slide-visual"><div style="width:80px;height:80px;background:blue;box-shadow:5px 5px 15px rgba(0,0,0,0.7);opacity:0.8;border-radius:4px"></div></div>` }],
+            // 39: gradient
+            [{ num: 'STEP 1', title: 'linear-gradient でグラデーション', html: `<p class="slide-text"><code>linear-gradient</code> で2色以上の背景グラデーションを作れます。</p><div class="slide-code-block"><span class="attr">background</span>: <span class="val">linear-gradient(red, blue)</span>;\n<span class="cm">/* 左から右へ */</span>\n<span class="attr">background</span>: <span class="val">linear-gradient(to right, red, blue)</span>;\n<span class="cm">/* 斜め45度 */</span>\n<span class="attr">background</span>: <span class="val">linear-gradient(45deg, red, blue)</span>;</div><div class="slide-visual"><div style="width:200px;height:50px;background:linear-gradient(to right,red,blue);border-radius:4px"></div></div>` }],
+            // 40: background-image
+            [{ num: 'STEP 1', title: '背景画像をきれいに表示する', html: `<p class="slide-text"><code>background-size: cover</code> + <code>background-position: center</code> で画像が綺麗にフィットします。</p><div class="slide-code-block"><span class="attr">.hero</span> {\n  <span class="attr">background-image</span>: <span class="val">url("URL")</span>;\n  <span class="attr">background-size</span>: <span class="val">cover</span>;\n  <span class="attr">background-position</span>: <span class="val">center</span>;\n}</div><div class="slide-tip"><code>cover</code>=縦横比を保ち要素全体を覆う。<code>contain</code>=全体が見えるように収める。</div>` }],
+            // 41: CSS変数
+            [{ num: 'STEP 1', title: 'CSS カスタムプロパティ（変数）', html: `<p class="slide-text"><code>:root</code> に変数を定義し <code>var()</code> で呼び出します。色を一箇所で管理できます。</p><div class="slide-code-block"><span class="attr">:root</span> {\n  <span class="attr">--primary</span>: <span class="val">#ff4757</span>;\n  <span class="attr">--bg</span>: <span class="val">#f1f2f6</span>;\n}\n<span class="attr">.card</span> {\n  <span class="attr">color</span>: <span class="val">var(--primary)</span>;\n  <span class="attr">background-color</span>: <span class="val">var(--bg)</span>;\n}</div><div class="slide-tip">変数名は必ず <code>--</code>（ハイフン2つ）で始めます！</div>` }],
+            // 42: calc
+            [{ num: 'STEP 1', title: 'calc() で動的な計算', html: `<p class="slide-text"><code>calc()</code> で異なる単位を混在させた計算ができます。</p><div class="slide-code-block"><span class="attr">.bar</span> {\n  <span class="attr">width</span>: <span class="val">calc(100% - 50px)</span>;\n  <span class="cm">/* 「画面幅から50pxを引く」*/</span>\n}</div><div class="slide-tip">+  -  *  / が使えます。演算子の前後にスペースが必要です（特に + と -）。</div>` }],
+            // 43: overflow
+            [{ num: 'STEP 1', title: 'overflow でコンテンツ制御', html: `<p class="slide-text"><code>overflow</code> でコンテンツがはみ出した時の挙動を制御します。</p><div class="slide-code-block"><span class="attr">overflow</span>: <span class="val">visible</span>; <span class="cm">はみ出す（デフォルト）</span>\n<span class="attr">overflow</span>: <span class="val">hidden</span>;  <span class="cm">切り取り</span>\n<span class="attr">overflow</span>: <span class="val">scroll</span>;  <span class="cm">常にスクロールバー</span>\n<span class="attr">overflow</span>: <span class="val">auto</span>;    <span class="cm">必要な時だけスクロール</span></div><div class="slide-tip">課題は <code>overflow: auto</code> または <code>overflow-y: auto</code> で解けます！</div>` }],
+            // 44: filter
+            [{ num: 'STEP 1', title: 'filter でビジュアルエフェクト', html: `<p class="slide-text"><code>filter</code> プロパティで画像などにエフェクトをかけられます。</p><div class="slide-code-block"><span class="attr">filter</span>: <span class="val">grayscale(100%)</span>; <span class="cm">白黒</span>\n<span class="attr">filter</span>: <span class="val">blur(5px)</span>;       <span class="cm">ぼかし</span>\n<span class="attr">filter</span>: <span class="val">brightness(1.5)</span>; <span class="cm">明るさ</span>\n<span class="attr">filter</span>: <span class="val">sepia(100%)</span>;    <span class="cm">セピア</span></div><div class="slide-tip">課題は <code>filter: grayscale(100%);</code> を img に指定すればOKです！</div>` }],
+            // 45: セレクタ
+            [{ num: 'STEP 1', title: '子孫・子・隣接セレクタ', html: `<p class="slide-text">セレクタの組み合わせで特定の階層の要素だけを狙えます。</p><div class="slide-code-block"><span class="attr">.parent p</span>   { } <span class="cm">全ての子孫 p</span>\n<span class="attr">.parent > p</span> { } <span class="cm">直下の子 p のみ</span>\n<span class="attr">.item + p</span>   { } <span class="cm">直後の兄弟 p</span></div><div class="slide-tip">課題は <code>.parent > p { color: red; }</code> と書けばOKです！</div>` }],
+            // 46: Grid Area
+            [{ num: 'STEP 1', title: 'grid-template-areas で直感的レイアウト', html: `<p class="slide-text">領域に名前をつけて視覚的にレイアウトを定義できます。</p><div class="slide-code-block"><span class="attr">.grid</span> {\n  <span class="attr">display</span>: <span class="val">grid</span>;\n  <span class="attr">grid-template-areas</span>:\n    <span class="val">"header header"</span>\n    <span class="val">"sidebar main"</span>;\n}\n<span class="attr">.header</span>  { <span class="attr">grid-area</span>: <span class="val">header</span>; }\n<span class="attr">.sidebar</span> { <span class="attr">grid-area</span>: <span class="val">sidebar</span>; }\n<span class="attr">.main</span>    { <span class="attr">grid-area</span>: <span class="val">main</span>; }</div>` }],
+            // 47: flex-grow
+            [{ num: 'STEP 1', title: 'flex-grow で余白を自動で埋める', html: `<p class="slide-text"><code>flex-grow: 1</code> を指定した要素が、残りのスペースをすべて占有します。</p><div class="slide-code-block"><span class="attr">.grow</span> { <span class="attr">flex-grow</span>: <span class="val">1</span>; }\n<span class="cm">/* または */</span>\n<span class="attr">.grow</span> { <span class="attr">flex</span>: <span class="val">1</span>; }</div><div class="slide-visual" style="width:100%;display:flex;gap:4px"><div style="padding:8px 12px;background:#444;border-radius:4px;font-size:12px;color:#ccc;white-space:nowrap">固定</div><div style="padding:8px 12px;background:#0e639c;border-radius:4px;font-size:12px;color:#fff;flex:1">伸びる →</div><div style="padding:8px 12px;background:#444;border-radius:4px;font-size:12px;color:#ccc;white-space:nowrap">固定</div></div>` }],
+            // 48: 3D Transform
+            [{ num: 'STEP 1', title: '3D Transform と perspective', html: `<p class="slide-text"><code>perspective</code> で視点距離を設定し、<code>rotateX/Y</code> で3D回転ができます。</p><div class="slide-code-block"><span class="attr">.scene</span> {\n  <span class="attr">perspective</span>: <span class="val">500px</span>; <span class="cm">視点の距離</span>\n}\n<span class="attr">.card</span> {\n  <span class="attr">transform</span>: <span class="val">rotateX(45deg)</span>;\n}</div><div class="slide-tip">perspective の数値が小さいほど遠近感が強くなります。</div>` }],
+            // 49: animation-delay
+            [{ num: 'STEP 1', title: 'animation-delay で動きをずらす', html: `<p class="slide-text"><code>animation-delay</code> でアニメーション開始を遅らせます。複数要素にずらして適用すると連続感が生まれます。</p><div class="slide-code-block"><span class="attr">.ball2</span> {\n  <span class="attr">animation-delay</span>: <span class="val">0.5s</span>;\n  <span class="cm">/* 0.5秒後に開始 */</span>\n}</div><div class="slide-tip">負の値（例：-0.5s）を使うとすでに途中から動いているように見せることもできます。</div>` }],
+            // 50: 最終課題
+            [{ num: 'FINAL', title: '最終課題：カードUIを完成させよう', html: `<p class="slide-text">これまでの知識をフル活用して、美しいカードコンポーネントを仕上げましょう！</p><div class="slide-code-block"><span class="attr">.card</span> {\n  <span class="attr">border-radius</span>: <span class="val">10px</span>;\n  <span class="attr">overflow</span>: <span class="val">hidden</span>;\n  <span class="attr">box-shadow</span>: <span class="val">0 10px 30px rgba(0,0,0,0.2)</span>;\n}</div><div class="slide-tip">box-shadow を追加するだけでクリアです！あとは自由にアレンジしてみましょう。</div>` },
+            { num: 'FINAL 2', title: 'ここまで到達したあなたへ', html: `<div style="text-align:center;padding:16px 0"><div style="font-size:56px;margin-bottom:14px">🏆</div><p class="slide-text" style="text-align:center">HTMLとCSSの主要な機能をすべて学びました！</p><p class="slide-text" style="text-align:center">エディタで自由にコードを書いて、最後のレベルをクリアしましょう！</p></div>` }],
+        ];
+
+        // ─── 状態 ───
+        let current = 0;
+        let done = new Set();
+        let skills = [];
+        let xp = 0;
+        const totalXP = challenges.reduce((s, c) => s + c.xp, 0);
+        let htmlEd, cssEd;
+        let hintOpen = false;
+        let currentFilter = 'all';
+
+        // ─── 初期化 ───
+        window.addEventListener('DOMContentLoaded', () => {
+            initEditors();
+            buildNav();
+            loadLevel(0);
+            initResizer();
+            document.getElementById('xp-text').textContent = `XP: 0 / ${totalXP}`;
+        });
+
+        function initEditors() {
+            const base = { theme: 'dracula', lineNumbers: true, indentUnit: 2, tabSize: 2, autoCloseTags: true, matchBrackets: true };
+            htmlEd = CodeMirror.fromTextArea(document.getElementById('ed-html'), { ...base, mode: 'htmlmixed', extraKeys: { 'Tab': expandSnippet } });
+            cssEd = CodeMirror.fromTextArea(document.getElementById('ed-css'), { ...base, mode: 'css', extraKeys: { 'Tab': cm => { if (cm.somethingSelected()) cm.indentSelection("add"); else cm.replaceSelection("  ", "end"); } } });
+            const update = () => { setTimeout(renderPreview, 250); };
+            htmlEd.on('change', update); cssEd.on('change', update);
+        }
+
+        function setFilter(f) {
+            currentFilter = f;
+            ['all', 'html', 'css'].forEach(k => {
+                document.getElementById('mf-' + k).classList.toggle('active', k === f);
+            });
+            buildNav();
+        }
+
+        function buildNav() {
+            const nav = document.getElementById('level-nav');
+            nav.innerHTML = '';
+
+            let currentCategory = '';
+
+            challenges.forEach((ch, i) => {
+                const isHtml = /HTML/i.test(ch.category);
+                const isCss = /CSS/i.test(ch.category);
+                if (currentFilter === 'html' && !isHtml && !/総合/.test(ch.category)) return;
+                if (currentFilter === 'css' && !isCss && !/総合/.test(ch.category)) return;
+
+                if (ch.category !== currentCategory) {
+                    currentCategory = ch.category;
+                    const cat = document.createElement('div');
+                    cat.className = 'lvl-cat';
+                    cat.textContent = '・ ' + currentCategory;
+                    nav.appendChild(cat);
+                }
+
+                const item = document.createElement('div');
+                item.className = 'lvl-item' + (i === current ? ' active' : '') + (done.has(i) ? ' done' : '');
+                item.onclick = () => loadLevel(i);
+                item.title = `Level ${i + 1}: ${ch.title}`;
+
+                const num = document.createElement('div');
+                num.className = 'lvl-num';
+                num.textContent = i + 1;
+
+                const title = document.createElement('div');
+                title.className = 'lvl-title';
+                title.textContent = ch.title;
+
+                item.appendChild(num);
+                item.appendChild(title);
+                nav.appendChild(item);
+            });
+        }
+
+        function loadLevel(idx) {
+            current = idx;
+            hintOpen = false;
+
+            const ch = challenges[idx];
+            document.getElementById('ch-title').textContent = `Level ${idx + 1}: ${ch.title}`;
+            document.getElementById('ch-cat').textContent = ch.category;
+            document.getElementById('ch-desc').innerHTML = ch.desc;
+            document.getElementById('hint-box').style.display = 'none';
+            document.getElementById('hint-box').innerHTML = '';
+
+            htmlEd.setValue(ch.html);
+            cssEd.setValue(ch.css);
+
+            setStatus('', '');
+            buildNav();
+            updateHeader();
+            renderPreview();
+        }
+
+        function updateHeader() {
+            document.getElementById('lv-badge').textContent = `Level ${current + 1} / ${challenges.length}`;
+            document.getElementById('xp-bar').style.width = (xp / totalXP * 100) + '%';
+            document.getElementById('xp-text').textContent = `XP: ${xp} / ${totalXP}`;
+        }
+
+        function renderPreview() {
+            const h = htmlEd.getValue();
+            const c = cssEd.getValue();
+            const doc = '<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<style>\nbody { font-family: \'Segoe UI\', sans-serif; padding: 20px; margin: 0; }\n' + c + '\n<\/style>\n<\/head>\n<body>\n' + h + '\n<\/body>\n<\/html>';
+            document.getElementById('preview-frame').srcdoc = doc;
+        }
+
+        function switchTab(tab) {
+            document.getElementById('ep-html').classList.toggle('active', tab === 'html');
+            document.getElementById('ep-css').classList.toggle('active', tab === 'css');
+            document.getElementById('t-html').classList.toggle('active', tab === 'html');
+            document.getElementById('t-css').classList.toggle('active', tab === 'css');
+            if (tab === 'html') htmlEd.refresh(); else cssEd.refresh();
+        }
+
+        function checkAnswer() {
+            const h = htmlEd.getValue();
+            const c = cssEd.getValue();
+            const ch = challenges[current];
+
+            if (ch.check(h, c)) {
+                if (!done.has(current)) {
+                    done.add(current);
+                    xp += ch.xp;
+
+                    // 最新のスキルを先頭に追加（最大5個まで表示など制限してもよいが今回は全て保持）
+                    skills.unshift({ icon: ch.skillIcon, name: ch.skill, desc: ch.skillDesc });
+                    updateSkills();
+                    buildNav();
+                    updateHeader();
+                    showModal(ch);
+                } else {
+                    setStatus('✅ すでにクリア済みです！次のレベルに進みましょう。', 'ok');
+                }
+            } else {
+                setStatus('❌ まだ条件を満たしていません。ヒントを参考にしてみましょう！', 'ng');
+                if (!hintOpen) toggleHint();
+            }
+        }
+
+        function toggleHint() {
+            hintOpen = !hintOpen;
+            const box = document.getElementById('hint-box');
+            if (hintOpen) {
+                box.innerHTML = '💡 <b>ヒント：</b>' + challenges[current].hint;
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        function resetCode() {
+            const ch = challenges[current];
+            htmlEd.setValue(ch.html);
+            cssEd.setValue(ch.css);
+            setStatus('', '');
+        }
+
+        function updateSkills() {
+            const el = document.getElementById('skills-list');
+            if (!skills.length) {
+                el.innerHTML = '<div class="no-skill">まだスキルがありません</div>';
+                return;
+            }
+            // サイドバーのスキルリストは最新のものから順に表示
+            el.innerHTML = skills.map(s => `<div class="skill-chip"><span class="sk-icon">${s.icon}</span><span>${s.name}</span></div>`).join('');
+        }
+
+        function showModal(ch) {
+            document.getElementById('m-skill').textContent = `${ch.skillIcon} ${ch.skill} を習得！`;
+            document.getElementById('m-desc').textContent = ch.skillDesc;
+            document.getElementById('m-xp').textContent = `＋${ch.xp} XP 獲得！`;
+            document.getElementById('modal-bg').classList.add('show');
+        }
+
+        function goNext() {
+            document.getElementById('modal-bg').classList.remove('show');
+            if (done.size >= challenges.length) {
+                showAllDone();
+            } else if (current < challenges.length - 1) {
+                loadLevel(current + 1);
+            } else {
+                // 最終レベルだが未クリアのレベルが残っている場合は最初の未クリアへ
+                const next = challenges.findIndex((_, i) => !done.has(i));
+                loadLevel(next !== -1 ? next : 0);
+            }
+        }
+
+        function showAllDone() {
+            const grid = document.getElementById('done-skills');
+            // 全クリア画面では取得順（配列の逆）で表示
+            const sortedSkills = [...skills].reverse();
+            grid.innerHTML = sortedSkills.map(s => `<div class="skill-chip"><span class="sk-icon">${s.icon}</span><span style="font-size: 12px; font-weight: bold; margin-top: 4px; color: #fff;">${s.name}</span></div>`).join('');
+            document.getElementById('all-done').classList.add('show');
+        }
+
+        function restart() {
+            done.clear(); skills = []; xp = 0;
+            document.getElementById('all-done').classList.remove('show');
+            updateSkills(); loadLevel(0);
+        }
+
+        function setStatus(msg, cls) {
+            const el = document.getElementById('status-msg');
+            el.textContent = msg; el.className = cls;
+        }
+
+        // ─── スライドパネル ───
+        let slideIdx = 0;
+
+        function openSlidePanel() {
+            const ch = challenges[current];
+            document.getElementById('slide-level-title').textContent = `Level ${current + 1}: ${ch.title}`;
+            slideIdx = 0;
+            renderSlidePanel();
+            document.getElementById('slide-panel').classList.add('open');
+            document.getElementById('slide-overlay').classList.add('show');
+        }
+
+        function closeSlidePanel() {
+            document.getElementById('slide-panel').classList.remove('open');
+            document.getElementById('slide-overlay').classList.remove('show');
+        }
+
+        function changeSlide(dir) {
+            const pages = slidesData[current];
+            slideIdx = Math.max(0, Math.min(pages.length - 1, slideIdx + dir));
+            renderSlidePanel();
+        }
+
+        function renderSlidePanel() {
+            const pages = slidesData[current];
+            const body = document.getElementById('slide-body');
+            body.innerHTML = pages.map((p, i) =>
+                `<div class="slide-page${i === slideIdx ? ' active' : ''}">
+                    <div class="slide-num">${p.num}</div>
+                    <div class="slide-title">${p.title}</div>
+                    ${p.html}
+                </div>`
+            ).join('');
+
+            // ドット
+            const dots = document.getElementById('slide-dots');
+            dots.innerHTML = pages.map((_, i) =>
+                `<div class="slide-dot${i === slideIdx ? ' active' : ''}" onclick="slideIdx=${i};renderSlidePanel()"></div>`
+            ).join('');
+
+            document.getElementById('slide-prev').disabled = slideIdx === 0;
+            document.getElementById('slide-next').disabled = slideIdx === pages.length - 1;
+        }
+
+        // キーボード操作
+        document.addEventListener('keydown', e => {
+            if (!document.getElementById('slide-panel').classList.contains('open')) return;
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'Escape') closeSlidePanel();
+        });
+
+        function initResizer() {
+            const r = document.getElementById('resizer');
+            const ed = document.getElementById('editor-area');
+            const pv = document.getElementById('preview-area');
+            let active = false, sx, ew, pw;
+            r.addEventListener('mousedown', e => { active = true; sx = e.clientX; ew = ed.offsetWidth; pw = pv.offsetWidth; r.classList.add('drag'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; });
+            document.addEventListener('mousemove', e => { if (!active) return; const dx = e.clientX - sx; const ne = ew + dx; const np = pw - dx; if (ne > 150 && np > 150) { ed.style.flex = 'none'; ed.style.width = ne + 'px'; pv.style.width = np + 'px'; htmlEd.refresh(); cssEd.refresh(); } });
+            document.addEventListener('mouseup', () => { if (active) { active = false; r.classList.remove('drag'); document.body.style.cursor = ''; document.body.style.userSelect = ''; } });
+        }
+    </script>
+</body>
+
+</html>
