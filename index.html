@@ -1125,10 +1125,10 @@
         <div id="sidebar">
             <div class="sb-section grow">
                 <h3>レベル一覧</h3>
-                <div id="mode-filter">
-                    <button class="mode-btn active" id="mf-all" onclick="setFilter('all')">ALL</button>
-                    <button class="mode-btn" id="mf-html" onclick="setFilter('html')">HTML</button>
-                    <button class="mode-btn" id="mf-css" onclick="setFilter('css')">CSS</button>
+                <div id="mode-filter" role="group" aria-label="カテゴリフィルター">
+                    <button class="mode-btn active" id="mf-all" aria-pressed="true" onclick="setFilter('all')">ALL</button>
+                    <button class="mode-btn" id="mf-html" aria-pressed="false" onclick="setFilter('html')">HTML</button>
+                    <button class="mode-btn" id="mf-css" aria-pressed="false" onclick="setFilter('css')">CSS</button>
                 </div>
                 <div id="level-nav"></div>
             </div>
@@ -1157,11 +1157,11 @@
 
             <div id="workspace">
                 <div id="editor-area">
-                    <div id="tab-bar">
-                        <div class="tab tab-html active" id="t-html" onclick="switchTab('html')">
+                    <div id="tab-bar" role="tablist" aria-label="エディタタブ">
+                        <div class="tab tab-html active" id="t-html" role="tab" aria-selected="true" tabindex="0" onclick="switchTab('html')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('html')}">
                             <span class="tab-dot"></span>index.html
                         </div>
-                        <div class="tab tab-css" id="t-css" onclick="switchTab('css')">
+                        <div class="tab tab-css" id="t-css" role="tab" aria-selected="false" tabindex="-1" onclick="switchTab('css')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('css')}">
                             <span class="tab-dot"></span>style.css
                         </div>
                     </div>
@@ -1181,8 +1181,9 @@
                             <div class="mac-dot" style="background:#28c840"></div>
                         </div>
                         <span id="preview-label">プレビュー</span>
+                        <button id="btn-preview-back" onclick="backToPreview()" style="display:none;margin-left:auto;background:#2d2d2d;color:#ccc;border:1px solid #444;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;line-height:1;">← 戻る</button>
                     </div>
-                    <iframe id="preview-frame" title="preview"></iframe>
+                    <iframe id="preview-frame" title="preview" sandbox="allow-same-origin allow-forms allow-scripts"></iframe>
                 </div>
             </div>
         </div>
@@ -1200,12 +1201,12 @@
     <div id="slide-overlay" onclick="closeSlidePanel()"></div>
 
     <!-- スライドパネル -->
-    <div id="slide-panel">
+    <div id="slide-panel" role="dialog" aria-modal="true" aria-labelledby="slide-level-title">
         <div id="slide-header">
             <div id="slide-level-title"></div>
             <button id="btn-close-slide" onclick="closeSlidePanel()">✕ 閉じる</button>
         </div>
-        <div id="slide-body" id="slide-body"></div>
+        <div id="slide-body"></div>
         <div id="slide-footer">
             <button class="slide-nav-btn" id="slide-prev" onclick="changeSlide(-1)">← 前へ</button>
             <div id="slide-dots"></div>
@@ -1214,10 +1215,10 @@
     </div>
 
     <!-- レベルクリアモーダル -->
-    <div id="modal-bg">
+    <div id="modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
         <div id="modal">
             <div class="modal-trophy">🏆</div>
-            <h2>レベルクリア！</h2>
+            <h2 id="modal-heading">レベルクリア！</h2>
             <p class="subtitle">新しいスキルを習得しました</p>
             <div class="skill-box">
                 <div class="sk-name" id="m-skill"></div>
@@ -1238,6 +1239,7 @@
     </div>
 
     <script>
+    (function () {
         // ─── スニペット定義 ───
         const snippets = {
             'h1': '<h1>|</h1>', 'h2': '<h2>|</h2>', 'h3': '<h3>|</h3>',
@@ -1313,7 +1315,7 @@
             { id: 26, title: 'マウスオーバー効果', category: 'CSS インタラクション', skill: 'Hover', skillIcon: '🖱️', skillDesc: ':hover が使えます！', xp: 160, desc: `<b>目標：</b>ボタンにマウスを乗せた時、背景を赤にしましょう！`, hint: '.btn:hover { background-color: red; }', html: '<button class="btn">Hover Me!</button>\n', css: '.btn {\n  background: blue;\n  color: white;\n  padding: 10px;\n}\n', check: (h, c) => /\.btn:hover\s*{[^}]*background(-color)?\s*:\s*red/i.test(c) },
             { id: 27, title: 'なめらかな変化', category: 'CSS インタラクション', skill: 'Transition', skillIcon: '💫', skillDesc: 'transition でアニメーションにできます！', xp: 180, desc: `<b>目標：</b>:hover時の変化を「0.5秒」かけましょう！`, hint: '.box の中に transition: 0.5s; を追加します。', html: '<div class="box">Hover</div>\n', css: '.box {\n  background: #55efc4;\n  width: 100px;\n  height: 100px;\n}\n.box:hover {\n  background: #00b894;\n}', check: (h, c) => /\.box[\s\S]*transition\s*:/i.test(c) },
             { id: 28, title: '要素の変形', category: 'CSS アニメーション', skill: 'Transform', skillIcon: '🔄', skillDesc: 'transform で回転や拡大ができます！', xp: 190, desc: `<b>目標：</b>要素を1.2倍に拡大し、10度回転させましょう！`, hint: 'transform: scale(1.2) rotate(10deg);', html: '<div class="card">Card</div>\n', css: '.card {\n  width: 100px;\n  height: 100px;\n  background: #ff7675;\n  transition: 0.3s;\n}\n.card:hover {\n\n}\n', check: (h, c) => /transform\s*:\s*[\s\S]*scale\s*\(\s*1\.2\s*\)[\s\S]*rotate\s*\(\s*10deg\s*\)/i.test(c) || /transform\s*:\s*[\s\S]*rotate\s*\(\s*10deg\s*\)[\s\S]*scale\s*\(\s*1\.2\s*\)/i.test(c) },
-            { id: 29, title: 'スマホ対応 (メディアクエリ)', category: 'レスポンシブ', skill: 'Media Query', skillIcon: '📱', skillDesc: '@media で画面サイズに対応できます！', xp: 200, desc: `<b>目標：</b>画面幅500px以下で縦並びに変更しましょう！`, hint: '@media (max-width: 500px) { .container { flex-direction: column; } }', html: '<div class="container">\n  <div class="item">左</div><div class="item">右</div>\n</div>\n', css: '.container {\n  display: flex;\n  gap: 10px;\n}\n.item {\n  flex: 1;\n  background: #ffeaa7;\n  padding: 20px;\n}\n', check: (h, c) => /@media[\s\S]*max-width\s*:\s*500px[\s\S]*\.container\s*{[^}]*flex-direction\s*:\s*column/i.test(c) },
+            { id: 29, title: 'スマホ対応 (メディアクエリ)', category: 'CSS レスポンシブ', skill: 'Media Query', skillIcon: '📱', skillDesc: '@media で画面サイズに対応できます！', xp: 200, desc: `<b>目標：</b>画面幅500px以下で縦並びに変更しましょう！`, hint: '@media (max-width: 500px) { .container { flex-direction: column; } }', html: '<div class="container">\n  <div class="item">左</div><div class="item">右</div>\n</div>\n', css: '.container {\n  display: flex;\n  gap: 10px;\n}\n.item {\n  flex: 1;\n  background: #ffeaa7;\n  padding: 20px;\n}\n', check: (h, c) => /@media[\s\S]*max-width\s*:\s*500px[\s\S]*\.container\s*{[^}]*flex-direction\s*:\s*column/i.test(c) },
             { id: 30, title: 'キーフレームアニメーション', category: 'CSS アニメーション', skill: 'Keyframes', skillIcon: '✨', skillDesc: '@keyframes を使えます！', xp: 250, desc: `<b>目標：</b>要素がフワフワ動くアニメーションを作りましょう！`, hint: '@keyframes float { 50% { transform: translateY(-20px); } } を定義し、animation: float 2s infinite; を適用します。', html: '<div class="ball"></div>\n', css: '.ball {\n  width: 50px;\n  height: 50px;\n  background: #0984e3;\n  border-radius: 50%;\n}\n', check: (h, c) => /@keyframes\s+[a-zA-Z0-9_-]+/i.test(c) && /animation\s*:/i.test(c) },
 
             // ＝＝＝ HTML 応用 ＝＝＝
@@ -1340,7 +1342,7 @@
             { id: 47, title: 'Flexboxの拡張', category: 'CSS Flexbox', skill: 'flex-grow', skillIcon: '↔️', skillDesc: 'flex-growで余白を自動で埋められます！', xp: 220, desc: `<b>目標：</b>真ん中の要素(<code>.grow</code>)だけ、余ったスペースいっぱいに広げましょう！<br><code>flex-grow: 1;</code> を指定します。`, hint: 'CSSタブの .grow に <code>flex-grow: 1;</code> を追加します。', html: '<div class="flex">\n  <div class="box">固定</div>\n  <div class="box grow">伸びる</div>\n  <div class="box">固定</div>\n</div>\n', css: '.flex {\n  display: flex;\n  width: 100%;\n}\n.box {\n  padding: 10px;\n  border: 1px solid #333;\n}\n.grow {\n\n}\n', check: (h, c) => /flex-grow\s*:\s*1/i.test(c) || /flex\s*:\s*1/i.test(c) },
             { id: 48, title: '3D変形', category: 'CSS アニメーション', skill: '3D Transform', skillIcon: '🧊', skillDesc: 'perspective と rotateX/Y で3D表現ができます！', xp: 240, desc: `<b>目標：</b>要素をX軸（横軸）を基準に45度奥に傾けましょう！<br><code>transform: rotateX(45deg);</code> を指定します。`, hint: 'CSSタブの.cardに <code>transform: rotateX(45deg);</code> を追加します。', html: '<div class="scene">\n  <div class="card">3D</div>\n</div>\n', css: '.scene {\n  perspective: 500px;\n  padding: 50px;\n}\n.card {\n  width: 100px;\n  height: 100px;\n  background: #e84393;\n  text-align: center;\n  line-height: 100px;\n}\n', check: (h, c) => /transform\s*:\s*rotateX\s*\(\s*45deg\s*\)/i.test(c) },
             { id: 49, title: 'アニメーションの遅延', category: 'CSS アニメーション', skill: 'Animation Delay', skillIcon: '⏳', skillDesc: 'animation-delay で動きをずらすことができます！', xp: 250, desc: `<b>目標：</b>2つ目のボールが「0.5秒遅れて」動き出すようにしましょう！<br><code>animation-delay: 0.5s;</code> を指定します。`, hint: 'CSSタブの.ball2に <code>animation-delay: 0.5s;</code> を指定します。', html: '<div class="ball ball1"></div>\n<div class="ball ball2"></div>\n', css: '.ball {\n  width: 30px;\n  height: 30px;\n  background: #e17055;\n  border-radius: 50%;\n  animation: bounce 1s infinite alternate;\n  margin: 10px;\n}\n.ball2 {\n\n}\n@keyframes bounce {\n  to { transform: translateX(100px); }\n}\n', check: (h, c) => /animation-delay\s*:\s*0\.5s/i.test(c) },
-            { id: 50, title: 'カードUI', category: 'シャドウ', skill: 'HTML/CSS マスター', skillIcon: '👑', skillDesc: '全ての知識を使って美しいUIを作成できます！', xp: 500, desc: `<b>目標：</b>これまで学んだ知識をフル活用して、美しいカードコンポーネントを完成させましょう！<br>画像の角を丸くし、全体に影をつけ、ボタンを装飾してください。（※影をつければクリアになります）`, hint: '自由にHTMLとCSSを記述して、見栄えの良いカードUIを作りましょう。box-shadow, border-radius などを活用してください。', html: '<div class="card">\n  <img src="https://picsum.photos/300/150" alt="サムネ" style="width:100%; display:block;">\n  <div style="padding: 15px;">\n    <h2>タイトル</h2>\n    <p>説明文がここに入ります。</p>\n    <button>詳細を見る</button>\n  </div>\n</div>\n', css: 'body {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  background: #f5f6fa;\n  margin: 0;\n}\n.card {\n  background: white;\n  width: 300px;\n  border-radius: 10px;\n  overflow: hidden;\n  /* ここに影(box-shadow)を追加してください */\n\n}\n', check: (h, c) => /<div[^>]*class=["']card["'][^>]*>/i.test(h) && /box-shadow\s*:/i.test(c) }
+            { id: 50, title: 'カードUI', category: 'CSS 装飾', skill: 'HTML/CSS マスター', skillIcon: '👑', skillDesc: '全ての知識を使って美しいUIを作成できます！', xp: 500, desc: `<b>目標：</b>これまで学んだ知識をフル活用して、美しいカードコンポーネントを完成させましょう！<br>画像の角を丸くし、全体に影をつけ、ボタンを装飾してください。（※影をつければクリアになります）`, hint: '自由にHTMLとCSSを記述して、見栄えの良いカードUIを作りましょう。box-shadow, border-radius などを活用してください。', html: '<div class="card">\n  <img src="https://picsum.photos/300/150" alt="サムネ" style="width:100%; display:block;">\n  <div style="padding: 15px;">\n    <h2>タイトル</h2>\n    <p>説明文がここに入ります。</p>\n    <button>詳細を見る</button>\n  </div>\n</div>\n', css: 'body {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  background: #f5f6fa;\n  margin: 0;\n}\n.card {\n  background: white;\n  width: 300px;\n  border-radius: 10px;\n  overflow: hidden;\n  /* ここに影(box-shadow)を追加してください */\n\n}\n', check: (h, c) => /<div[^>]*class=["']card["'][^>]*>/i.test(h) && /box-shadow\s*:/i.test(c) }
         ];
 
         // ─── スライドデータ (全50レベル) ───
@@ -1460,27 +1462,54 @@
         let hintOpen = false;
         let currentFilter = 'all';
 
+        // ─── 進捗の保存・復元 ───
+        const STORAGE_KEY = 'html_css_editor_progress';
+
+        function saveProgress() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                done: [...done],
+                xp: xp,
+                skills: skills
+            }));
+        }
+
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (!saved) return;
+                const data = JSON.parse(saved);
+                if (Array.isArray(data.done)) data.done.forEach(i => done.add(i));
+                if (typeof data.xp === 'number') xp = data.xp;
+                if (Array.isArray(data.skills)) skills = data.skills;
+            } catch (e) {}
+        }
+
         // ─── 初期化 ───
         window.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
             initEditors();
             buildNav();
-            loadLevel(0);
+            const resumeAt = challenges.findIndex((_, i) => !done.has(i));
+            loadLevel(resumeAt !== -1 ? resumeAt : 0);
             initResizer();
-            document.getElementById('xp-text').textContent = `XP: 0 / ${totalXP}`;
+            updateSkills();
         });
 
         function initEditors() {
             const base = { theme: 'dracula', lineNumbers: true, indentUnit: 2, tabSize: 2, autoCloseTags: true, matchBrackets: true };
             htmlEd = CodeMirror.fromTextArea(document.getElementById('ed-html'), { ...base, mode: 'htmlmixed', extraKeys: { 'Tab': expandSnippet } });
             cssEd = CodeMirror.fromTextArea(document.getElementById('ed-css'), { ...base, mode: 'css', extraKeys: { 'Tab': cm => { if (cm.somethingSelected()) cm.indentSelection("add"); else cm.replaceSelection("  ", "end"); } } });
-            const update = () => { setTimeout(renderPreview, 250); };
+            let _previewTimer;
+            const update = () => { clearTimeout(_previewTimer); _previewTimer = setTimeout(renderPreview, 250); };
             htmlEd.on('change', update); cssEd.on('change', update);
         }
 
         function setFilter(f) {
             currentFilter = f;
             ['all', 'html', 'css'].forEach(k => {
-                document.getElementById('mf-' + k).classList.toggle('active', k === f);
+                const btn = document.getElementById('mf-' + k);
+                btn.classList.toggle('active', k === f);
+                btn.setAttribute('aria-pressed', String(k === f));
             });
             buildNav();
         }
@@ -1494,8 +1523,8 @@
             challenges.forEach((ch, i) => {
                 const isHtml = /HTML/i.test(ch.category);
                 const isCss = /CSS/i.test(ch.category);
-                if (currentFilter === 'html' && !isHtml && !/総合/.test(ch.category)) return;
-                if (currentFilter === 'css' && !isCss && !/総合/.test(ch.category)) return;
+                if (currentFilter === 'html' && !isHtml) return;
+                if (currentFilter === 'css' && !isCss) return;
 
                 if (ch.category !== currentCategory) {
                     currentCategory = ch.category;
@@ -1551,17 +1580,38 @@
         }
 
         function renderPreview() {
+            const frame = document.getElementById('preview-frame');
             const h = htmlEd.getValue();
             const c = cssEd.getValue();
-            const doc = '<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<style>\nbody { font-family: \'Segoe UI\', sans-serif; padding: 20px; margin: 0; }\n' + c + '\n<\/style>\n<\/head>\n<body>\n' + h + '\n<\/body>\n<\/html>';
-            document.getElementById('preview-frame').srcdoc = doc;
+            const interceptScript = '<scr' + 'ipt>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a){var href=a.getAttribute("href");if(href&&!href.startsWith("#")&&!href.startsWith("javascript:")){e.preventDefault();window.parent.postMessage({type:"preview-navigate",url:a.href},"*");}}});<\/scr' + 'ipt>';
+            const doc = '<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<style>\nbody { font-family: \'Segoe UI\', sans-serif; padding: 20px; margin: 0; }\n' + c + '\n<\/style>\n' + interceptScript + '\n<\/head>\n<body>\n' + h + '\n<\/body>\n<\/html>';
+            frame.removeAttribute('src');
+            frame.srcdoc = doc;
+            document.getElementById('btn-preview-back').style.display = 'none';
         }
+
+        function backToPreview() { renderPreview(); }
+
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'preview-navigate') {
+                const frame = document.getElementById('preview-frame');
+                frame.removeAttribute('srcdoc');
+                frame.src = e.data.url;
+                document.getElementById('btn-preview-back').style.display = '';
+            }
+        });
 
         function switchTab(tab) {
             document.getElementById('ep-html').classList.toggle('active', tab === 'html');
             document.getElementById('ep-css').classList.toggle('active', tab === 'css');
-            document.getElementById('t-html').classList.toggle('active', tab === 'html');
-            document.getElementById('t-css').classList.toggle('active', tab === 'css');
+            const tHtml = document.getElementById('t-html');
+            const tCss  = document.getElementById('t-css');
+            tHtml.classList.toggle('active', tab === 'html');
+            tCss.classList.toggle('active',  tab === 'css');
+            tHtml.setAttribute('aria-selected', String(tab === 'html'));
+            tCss.setAttribute('aria-selected',  String(tab === 'css'));
+            tHtml.tabIndex = tab === 'html' ? 0 : -1;
+            tCss.tabIndex  = tab === 'css'  ? 0 : -1;
             if (tab === 'html') htmlEd.refresh(); else cssEd.refresh();
         }
 
@@ -1580,6 +1630,7 @@
                     updateSkills();
                     buildNav();
                     updateHeader();
+                    saveProgress();
                     showModal(ch);
                 } else {
                     setStatus('✅ すでにクリア済みです！次のレベルに進みましょう。', 'ok');
@@ -1648,6 +1699,7 @@
 
         function restart() {
             done.clear(); skills = []; xp = 0;
+            saveProgress();
             document.getElementById('all-done').classList.remove('show');
             updateSkills(); loadLevel(0);
         }
@@ -1694,19 +1746,26 @@
             // ドット
             const dots = document.getElementById('slide-dots');
             dots.innerHTML = pages.map((_, i) =>
-                `<div class="slide-dot${i === slideIdx ? ' active' : ''}" onclick="slideIdx=${i};renderSlidePanel()"></div>`
+                `<div class="slide-dot${i === slideIdx ? ' active' : ''}" role="button" aria-label="${i + 1}ページ目" tabindex="0" onclick="gotoSlide(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gotoSlide(${i})}"></div>`
             ).join('');
 
             document.getElementById('slide-prev').disabled = slideIdx === 0;
             document.getElementById('slide-next').disabled = slideIdx === pages.length - 1;
         }
 
+        function gotoSlide(i) { slideIdx = i; renderSlidePanel(); }
+
         // キーボード操作
         document.addEventListener('keydown', e => {
-            if (!document.getElementById('slide-panel').classList.contains('open')) return;
-            if (e.key === 'ArrowRight') changeSlide(1);
-            if (e.key === 'ArrowLeft') changeSlide(-1);
-            if (e.key === 'Escape') closeSlidePanel();
+            if (document.getElementById('slide-panel').classList.contains('open')) {
+                if (e.key === 'ArrowRight') changeSlide(1);
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                if (e.key === 'Escape') closeSlidePanel();
+                return;
+            }
+            if (document.getElementById('modal-bg').classList.contains('show')) {
+                if (e.key === 'Escape') document.getElementById('modal-bg').classList.remove('show');
+            }
         });
 
         function initResizer() {
@@ -1718,6 +1777,15 @@
             document.addEventListener('mousemove', e => { if (!active) return; const dx = e.clientX - sx; const ne = ew + dx; const np = pw - dx; if (ne > 150 && np > 150) { ed.style.flex = 'none'; ed.style.width = ne + 'px'; pv.style.width = np + 'px'; htmlEd.refresh(); cssEd.refresh(); } });
             document.addEventListener('mouseup', () => { if (active) { active = false; r.classList.remove('drag'); document.body.style.cursor = ''; document.body.style.userSelect = ''; } });
         }
+
+        // ─── インラインハンドラ向けにグローバルへ公開 ───
+        Object.assign(window, {
+            setFilter, switchTab, openSlidePanel, closeSlidePanel,
+            changeSlide, gotoSlide, checkAnswer, toggleHint,
+            resetCode, goNext, restart
+        });
+
+    })(); // IIFE end
     </script>
 </body>
 
